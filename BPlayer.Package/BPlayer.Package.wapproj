@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{00000000-0000-0000-0000-000000000001}</ProjectGuid>
+    <OutputType>AppContainerExe</OutputType>
+    <AppxPackage>true</AppxPackage>
+    <AppxPackageSigningEnabled>true</AppxPackageSigningEnabled>
+    <SignToolPath>C:\Program Files (x86)\Microsoft SDKs\ClickOnce\SignTool</SignToolPath>
+    <PackageCertificateKeyFile>BPlayer_StoreKey.pfx</PackageCertificateKeyFile>
+    <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
+    <GenerateTestArtifacts>true</GenerateTestArtifacts>
+    <AppxAutoIncrementPackageRevision>true</AppxAutoIncrementPackageRevision>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BPlayer\BPlayer.csproj">
+      <SkipGetTargetFrameworkProperties>true</SkipGetTargetFrameworkProperties>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <AppxManifest Include="Package.appxmanifest" />
+  </ItemGroup>
+</Project>

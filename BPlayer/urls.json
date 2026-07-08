@@ -1,0 +1,45 @@
+{
+  "MetadataPresets": [
+    {
+      "Name": "TMDB",
+      "ApiUrl": "https://api.themoviedb.org/3/search/movie?api_key={key}&query={title}",
+      "ApiKey": "",
+      "JsonResponsePath": "results[0]",
+      "PosterBaseUrl": "https://image.tmdb.org/t/p/w500",
+      "IsBuiltIn": true,
+      "Fields": {
+        "Title": "title",
+        "Year": "release_date",
+        "Rating": "vote_average",
+        "Poster": "poster_path",
+        "Plot": "overview"
+      }
+    },
+    {
+      "Name": "OMDb",
+      "ApiUrl": "https://www.omdbapi.com/?t={title}&apikey={key}",
+      "ApiKey": "",
+      "IsBuiltIn": true,
+      "Fields": {
+        "Title": "Title",
+        "Year": "Year",
+        "Rating": "imdbRating",
+        "Poster": "Poster",
+        "Plot": "Plot"
+      }
+    },
+    {
+      "Name": "Custom Example",
+      "ApiUrl": "https://api.example.com/?q={title}",
+      "Fields": {
+        "Title": "Title",
+        "Year": "Year",
+        "Rating": "imdbRating",
+        "Poster": "Poster",
+        "Plot": "Plot"
+      }
+    }
+  ],
+  "RatingServiceUrl": "https://www.omdbapi.com/",
+  "RatingServiceApiKey": ""
+}

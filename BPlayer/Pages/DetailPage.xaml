@@ -1,0 +1,234 @@
+<Page x:Class="BPlayer.Pages.DetailPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:vlc="clr-namespace:LibVLCSharp.WPF;assembly=LibVLCSharp.WPF"
+      mc:Ignorable="d"
+      d:DesignHeight="600" d:DesignWidth="1000"
+       Title="Detail"
+       Background="Black">
+
+    <Page.Resources>
+        <Style TargetType="ContextMenu">
+            <Setter Property="Background" Value="{DynamicResource BgSurfaceBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderColorBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ContextMenu">
+                        <Border Background="{DynamicResource BgSurfaceBrush}" BorderBrush="{DynamicResource BorderColorBrush}"
+                                BorderThickness="1" CornerRadius="10" Padding="4">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="16" Opacity="0.4" ShadowDepth="4" Color="Black" />
+                            </Border.Effect>
+                            <ItemsPresenter />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="MenuItem">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="MenuItem">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}" CornerRadius="6"
+                                Margin="2,1" MinHeight="32">
+                            <ContentPresenter ContentSource="Header"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentBrush}" />
+                                <Setter Property="Foreground" Value="White" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Page.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Video area -->
+        <vlc:VideoView x:Name="VlcPlayer" Grid.Row="0"
+                       Cursor="Hand" Background="Black" />
+
+        <!-- Screenshot notification -->
+        <TextBlock x:Name="ScreenshotNotif" Grid.Row="0"
+                   Text="📷 Screenshot saved"
+                   Foreground="White" FontSize="16" FontWeight="SemiBold"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                   Visibility="Collapsed">
+            <TextBlock.Effect>
+                <DropShadowEffect BlurRadius="8" Opacity="0.8" ShadowDepth="2" Color="Black" />
+            </TextBlock.Effect>
+        </TextBlock>
+
+        <!-- Controls bar below video (no VLC airspace conflict) -->
+        <Border x:Name="ControlsOverlay" Grid.Row="1"
+                Background="#CC000000" Padding="28,6,28,10">
+            <Grid KeyDown="OnGridKeyDown">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Progress bar — 12px tall track -->
+                <Border Grid.Row="0" Height="12" Background="{DynamicResource ButtonBgBrush}"
+                        CornerRadius="6" Margin="0,0,0,8" Cursor="Hand"
+                        MouseLeftButtonDown="OnProgressClick"
+                        x:Name="SeekBar">
+                    <Border x:Name="ProgressFill" Width="0"
+                            Background="{DynamicResource AccentBrush}" CornerRadius="6"
+                            HorizontalAlignment="Left" />
+                </Border>
+
+                <!-- Controls row -->
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Back -->
+                    <Button Grid.Column="0" x:Name="BackBtn" Click="OnBackClick"
+                            Style="{StaticResource ModernBtn}"
+                            Foreground="#9ca3af" Padding="4" FontSize="18"
+                            Content="←" Margin="0,0,16,0" />
+
+                    <!-- Play/Pause -->
+                    <Border Grid.Column="1" Background="#2a2a3e" CornerRadius="20"
+                            Width="36" Height="36" Cursor="Hand">
+                        <Button x:Name="PlayBtn" Click="OnPlayClick"
+                                Background="Transparent" Foreground="White"
+                                BorderThickness="0" FontSize="15"
+                                Content="▶" Cursor="Hand" />
+                    </Border>
+
+                    <!-- Time -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal"
+                                VerticalAlignment="Center" Margin="14,0,0,0">
+                        <TextBlock x:Name="TimeCurrent" Text="0:00"
+                                   Foreground="#9ca3af" FontSize="12" />
+                        <TextBlock Text=" / " Foreground="#4b5563" FontSize="12" />
+                        <TextBlock x:Name="TimeTotal" Text="0:00"
+                                   Foreground="#6b7280" FontSize="12" />
+                    </StackPanel>
+
+                    <!-- Audio button -->
+                    <Border Grid.Column="3" Background="#1e1e30" CornerRadius="6"
+                            Padding="8,6" Cursor="Hand" Margin="0,0,6,0"
+                            MouseLeftButtonDown="OnAudioBtnClick">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="AUD" FontSize="11" FontWeight="Bold"
+                                       Foreground="#e94560" VerticalAlignment="Center" />
+                            <TextBlock x:Name="AudioLabel" Text=" 1" FontSize="11"
+                                       Foreground="#6b7280" Margin="3,0,0,0"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Subtitle button -->
+                    <Border Grid.Column="4" Background="#1e1e30" CornerRadius="6"
+                            Padding="8,6" Cursor="Hand" Margin="0,0,8,0"
+                            MouseLeftButtonDown="OnSubtitleBtnClick">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="CC" FontSize="11" FontWeight="Bold"
+                                       Foreground="#e94560" VerticalAlignment="Center" />
+                            <TextBlock x:Name="SubLabel" Text=" Off" FontSize="11"
+                                       Foreground="#6b7280" Margin="4,0,0,0"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Volume: clickable bar -->
+                    <StackPanel Grid.Column="5" Orientation="Horizontal"
+                                VerticalAlignment="Center" Margin="0,0,16,0">
+                        <TextBlock Text="🔊" Foreground="#6b7280" FontSize="13"
+                                   VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <Border x:Name="VolumeBar" Width="120" Height="10"
+                                Background="{DynamicResource ButtonBgBrush}" CornerRadius="5" Cursor="Hand"
+                                MouseLeftButtonDown="OnVolumeBarClick"
+                                VerticalAlignment="Center">
+                            <Border x:Name="VolumeFill" Width="100"
+                                    Background="{DynamicResource AccentBrush}" CornerRadius="5"
+                                    HorizontalAlignment="Left" />
+                        </Border>
+                        <TextBlock x:Name="VolumeLabel" Text="100"
+                                   Foreground="#9ca3af" FontSize="12"
+                                   VerticalAlignment="Center" Margin="8,0,0,0" />
+                    </StackPanel>
+
+                    <!-- Speed -->
+                    <Border Grid.Column="6" Background="#1e1e30" CornerRadius="6"
+                            Padding="8,6" Cursor="Hand" Margin="0,0,8,0"
+                            MouseLeftButtonDown="OnSpeedBtnClick">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock x:Name="SpeedLabel" Text="1.0x" FontSize="11" FontWeight="Bold"
+                                       Foreground="#e94560" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- A-B Repeat -->
+                    <Border Grid.Column="7" Background="#1e1e30" CornerRadius="6"
+                            Padding="6,6" Cursor="Hand" Margin="0,0,4,0"
+                            MouseLeftButtonDown="OnAButtonClick">
+                        <TextBlock x:Name="ABtn" Text="A" FontSize="11" FontWeight="Bold"
+                                   Foreground="#6b7280" VerticalAlignment="Center" />
+                    </Border>
+                    <Border Grid.Column="8" Background="#1e1e30" CornerRadius="6"
+                            Padding="6,6" Cursor="Hand" Margin="0,0,8,0"
+                            MouseLeftButtonDown="OnBButtonClick">
+                        <TextBlock x:Name="BBtn" Text="B" FontSize="11" FontWeight="Bold"
+                                   Foreground="#6b7280" VerticalAlignment="Center" />
+                    </Border>
+                    <Border Grid.Column="9" x:Name="ABRepeatBorder" Background="#1e1e30" CornerRadius="6"
+                            Padding="6,6" Cursor="Hand" Margin="0,0,8,0" Visibility="Collapsed"
+                            MouseLeftButtonDown="OnABRepeatClick">
+                        <TextBlock x:Name="ABRepeatLabel" Text="AB" FontSize="11" FontWeight="Bold"
+                                   Foreground="#e94560" VerticalAlignment="Center" />
+                    </Border>
+
+                    <!-- Rating -->
+                    <TextBlock Grid.Column="10" x:Name="RatingText"
+                               Foreground="#e94560" FontSize="13"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center" />
+
+                    <!-- Fullscreen toggle -->
+                    <Border Grid.Column="11" Background="#1e1e30" CornerRadius="6"
+                            Padding="8,6" Cursor="Hand" Margin="8,0,0,0"
+                            MouseLeftButtonDown="OnFullscreenBtnClick">
+                        <TextBlock x:Name="FullscreenBtn" Text="⛶" FontSize="13"
+                                   Foreground="#6b7280" VerticalAlignment="Center" />
+                    </Border>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</Page>
