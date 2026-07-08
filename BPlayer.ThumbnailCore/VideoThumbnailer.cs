@@ -1,9 +1,7 @@
-using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
 using Windows.Graphics.Imaging;
 using Windows.Media.FaceAnalysis;
 using Windows.Storage;
+using SkiaSharp;
 
 namespace BPlayer.ThumbnailCore;
 
@@ -40,23 +38,14 @@ public class VideoThumbnailer
         var cacheKey = Path.GetFileNameWithoutExtension(videoPath);
         var cachePath = Path.Combine(CacheDir, cacheKey + ".jpg");
 
-        // Invalidate undersized cached thumbnails
         if (File.Exists(cachePath))
         {
             try
             {
-                byte[] bytes = File.ReadAllBytes(cachePath);
-                using var ms = new MemoryStream(bytes);
-                using var test = Image.FromStream(ms);
-                if (test.Width < OutputW || test.Height < OutputH)
-                {
-                    test.Dispose();
-                    File.Delete(cachePath);
-                }
-                else
-                {
+                using var cached = SKBitmap.Decode(cachePath);
+                if (cached != null && cached.Width >= OutputW && cached.Height >= OutputH)
                     return new ThumbnailResult { Success = true, CachedPath = cachePath };
-                }
+                File.Delete(cachePath);
             }
             catch
             {
@@ -190,11 +179,11 @@ public class VideoThumbnailer
         }
     }
 
-    private static Rectangle? GetFaceBounds(string imagePath)
+    private static (int X, int Y, int Width, int Height)? GetFaceBounds(string imagePath)
     {
         try
         {
-            var tcs = new TaskCompletionSource<Rectangle?>();
+            var tcs = new TaskCompletionSource<(int, int, int, int)?>();
             var thread = new Thread(async () =>
             {
                 try
@@ -221,8 +210,7 @@ public class VideoThumbnailer
                     if (largest != null)
                     {
                         var fb = largest.FaceBox;
-                        tcs.TrySetResult(new Rectangle(
-                            (int)fb.X, (int)fb.Y, (int)fb.Width, (int)fb.Height));
+                        tcs.TrySetResult(((int)fb.X, (int)fb.Y, (int)fb.Width, (int)fb.Height));
                     }
                     else
                     {
@@ -325,9 +313,9 @@ public class VideoThumbnailer
     {
         try
         {
-            byte[] bytes = File.ReadAllBytes(imagePath);
-            using var ms = new MemoryStream(bytes);
-            using var orig = Image.FromStream(ms);
+            using var orig = SKBitmap.Decode(imagePath);
+            if (orig == null) return;
+
             var origW = orig.Width;
             var origH = orig.Height;
             var targetRatio = (double)targetW / targetH;
@@ -349,30 +337,25 @@ public class VideoThumbnailer
                 cropY = (origH - cropH) / 2;
             }
 
-            using var cropped = new Bitmap(targetW, targetH);
-            using (var g = Graphics.FromImage(cropped))
-            {
-                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                g.CompositingQuality = CompositingQuality.HighQuality;
-                g.SmoothingMode = SmoothingMode.HighQuality;
-                g.DrawImage(orig,
-                    new Rectangle(0, 0, targetW, targetH),
-                    new Rectangle(cropX, cropY, cropW, cropH),
-                    GraphicsUnit.Pixel);
-            }
+            using var cropped = new SKBitmap(targetW, targetH);
+            using var canvas = new SKCanvas(cropped);
+            canvas.DrawBitmap(orig,
+                new SKRect(cropX, cropY, cropX + cropW, cropY + cropH),
+                new SKRect(0, 0, targetW, targetH),
+                new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear));
 
             SaveJpeg(cropped, imagePath, 92);
         }
         catch { }
     }
 
-    private static void CropWithFaceAnchor(string imagePath, Rectangle faceRect, int targetW, int targetH)
+    private static void CropWithFaceAnchor(string imagePath, (int X, int Y, int Width, int Height) faceRect, int targetW, int targetH)
     {
         try
         {
-            byte[] bytes = File.ReadAllBytes(imagePath);
-            using var ms = new MemoryStream(bytes);
-            using var orig = Image.FromStream(ms);
+            using var orig = SKBitmap.Decode(imagePath);
+            if (orig == null) return;
+
             var imgW = orig.Width;
             var imgH = orig.Height;
             var targetRatio = (double)targetW / targetH;
@@ -410,36 +393,23 @@ public class VideoThumbnailer
             if (cropX + cropW > imgW) cropX = imgW - cropW;
             if (cropY + cropH > imgH) cropY = imgH - cropH;
 
-            using var cropped = new Bitmap(targetW, targetH);
-            using (var g = Graphics.FromImage(cropped))
-            {
-                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                g.CompositingQuality = CompositingQuality.HighQuality;
-                g.SmoothingMode = SmoothingMode.HighQuality;
-                g.DrawImage(orig,
-                    new Rectangle(0, 0, targetW, targetH),
-                    new Rectangle((int)cropX, (int)cropY, (int)cropW, (int)cropH),
-                    GraphicsUnit.Pixel);
-            }
+            using var cropped = new SKBitmap(targetW, targetH);
+            using var canvas = new SKCanvas(cropped);
+            canvas.DrawBitmap(orig,
+                new SKRect((float)cropX, (float)cropY, (float)(cropX + cropW), (float)(cropY + cropH)),
+                new SKRect(0, 0, targetW, targetH),
+                new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear));
 
             SaveJpeg(cropped, imagePath, 92);
         }
         catch { }
     }
 
-    private static void SaveJpeg(Bitmap bitmap, string path, int quality)
+    private static void SaveJpeg(SKBitmap bitmap, string path, int quality)
     {
-        var encoder = ImageCodecInfo.GetImageEncoders()
-            .FirstOrDefault(c => c.FormatID == ImageFormat.Jpeg.Guid);
-        if (encoder != null)
-        {
-            using var parameters = new EncoderParameters(1);
-            parameters.Param[0] = new EncoderParameter(Encoder.Quality, (long)quality);
-            bitmap.Save(path, encoder, parameters);
-        }
-        else
-        {
-            bitmap.Save(path, ImageFormat.Jpeg);
-        }
+        using var image = SKImage.FromBitmap(bitmap);
+        using var data = image.Encode(SKEncodedImageFormat.Jpeg, quality);
+        using var fs = File.OpenWrite(path);
+        data.SaveTo(fs);
     }
 }
