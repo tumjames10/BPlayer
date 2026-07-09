@@ -39,3 +39,6 @@ packages/
 # Windows
 Thumbs.db
 Desktop.ini
+
+# MSIX packaging output
+Output/

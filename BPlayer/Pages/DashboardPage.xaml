@@ -668,14 +668,51 @@
             <Border Grid.Row="1" Grid.RowSpan="5" x:Name="EmptyOverlay" Visibility="Collapsed"
                     Background="{DynamicResource BgDarkBrush}"
                     VerticalAlignment="Center" HorizontalAlignment="Center">
-                <StackPanel HorizontalAlignment="Center">
-                    <TextBlock Text="📁 No videos yet" FontSize="20"
-                               Foreground="{DynamicResource TextSecondaryBrush}"
-                               HorizontalAlignment="Center" />
-                    <TextBlock Text="Add your video folders in Settings"
-                               FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}"
-                               HorizontalAlignment="Center" Margin="0,8,0,0" />
-                </StackPanel>
+                <Border Background="{DynamicResource BgCardBrush}" CornerRadius="20"
+                        Padding="48,44" BorderBrush="{DynamicResource BorderColorBrush}"
+                        BorderThickness="1" MaxWidth="440">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="24" Opacity="0.25" ShadowDepth="6" Color="Black" />
+                    </Border.Effect>
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock Text="🎬" FontSize="64" HorizontalAlignment="Center" Margin="0,0,0,12" />
+                        <TextBlock Text="It's all quiet here"
+                                   FontSize="22" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                   HorizontalAlignment="Center" />
+                        <TextBlock Text="Add some video folders to get started"
+                                   FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}"
+                                   HorizontalAlignment="Center" Margin="0,6,0,24"
+                                   TextWrapping="Wrap" TextAlignment="Center" />
+                        <Border Background="{DynamicResource AccentBrush}" CornerRadius="10"
+                                Padding="0" Cursor="Hand" HorizontalAlignment="Center"
+                                x:Name="EmptyAddFoldersBtn"
+                                MouseLeftButtonDown="OnEmptyAddFoldersClick">
+                            <StackPanel Orientation="Horizontal" Margin="20,10">
+                                <TextBlock Text="+" FontSize="18" FontWeight="Bold"
+                                           Foreground="White" Margin="0,0,8,0" />
+                                <TextBlock Text="Add Folders"
+                                           FontSize="14" FontWeight="SemiBold"
+                                           Foreground="White" />
+                            </StackPanel>
+                        </Border>
+                        <Border Background="{DynamicResource BgDarkBrush}" CornerRadius="8"
+                                Padding="14,8" Margin="0,14,0,0" HorizontalAlignment="Center">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="or press" FontSize="11"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           VerticalAlignment="Center" Margin="0,0,6,0" />
+                                <Border Background="{DynamicResource ButtonBgBrush}" CornerRadius="4" Padding="6,2">
+                                    <TextBlock Text="Ctrl+S" FontSize="11" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                                </Border>
+                                <TextBlock Text="to open settings" FontSize="11"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           VerticalAlignment="Center" Margin="6,0,0,0" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
             </Border>
         </Grid>
         </ScrollViewer>

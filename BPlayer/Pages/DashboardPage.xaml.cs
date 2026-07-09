@@ -34,6 +34,7 @@ public partial class DashboardPage : Page
     private readonly List<VideoItem> _selectedVideos = new();
     private bool _isRefreshing;
     private bool _isListView;
+    private bool _animateNextLoad;
     private Window? _shortcutsWindow;
     private readonly List<FileSystemWatcher> _fileWatchers = new();
     private List<Collection> _collections = new();
@@ -116,6 +117,23 @@ public partial class DashboardPage : Page
         HideProgress();
         UpdateContinueWatching();
         UpdateRecentSection();
+        EmptyOverlay.Visibility = _currentVideos.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        if (_animateNextLoad && _currentVideos.Count > 0)
+        {
+            _animateNextLoad = false;
+            VideosList.Opacity = 0;
+            VideosListView.Opacity = 0;
+            Dispatcher.BeginInvoke(() =>
+            {
+                var fadeIn = new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(350))
+                {
+                    EasingFunction = new System.Windows.Media.Animation.QuadraticEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
+                };
+                VideosList.BeginAnimation(OpacityProperty, fadeIn);
+                VideosListView.BeginAnimation(OpacityProperty, fadeIn);
+            }, System.Windows.Threading.DispatcherPriority.Background);
+        }
     }
 
     private void UpdateRecentSection()
@@ -1082,6 +1100,11 @@ public partial class DashboardPage : Page
         }
     }
 
+    private void OnEmptyAddFoldersClick(object sender, MouseButtonEventArgs e)
+    {
+        OnSettingsClick(sender, new RoutedEventArgs());
+    }
+
     private async void OnSettingsClick(object sender, RoutedEventArgs e)
     {
         if (_isRefreshing) return;
@@ -1095,6 +1118,7 @@ public partial class DashboardPage : Page
             if (settings.ShowDialog() == true)
             {
                 Logger.Info("Settings saved — reloading dashboard");
+                _animateNextLoad = _allVideos.Count == 0;
                 ShowProgress();
                 var config = await _configService.LoadAsync();
                 Logger.Info($"Folders in config: {string.Join("; ", config.VideoSourcePaths)}");

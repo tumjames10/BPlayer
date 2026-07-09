@@ -11,8 +11,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BPlayer.ThumbnailGenerator"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BPlayer.Tests", "BPlayer.Tests\BPlayer.Tests.csproj", "{301C27CC-6AD7-4CE8-B6B9-C13F82ECAA17}"
 EndProject
-Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "BPlayer.Package", "BPlayer.Package\BPlayer.Package.wapproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
-EndProject
+
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -38,9 +37,5 @@ Global
 		{301C27CC-6AD7-4CE8-B6B9-C13F82ECAA17}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{301C27CC-6AD7-4CE8-B6B9-C13F82ECAA17}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{301C27CC-6AD7-4CE8-B6B9-C13F82ECAA17}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug|Any CPU.ActiveCfg = Debug|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug|Any CPU.Build.0 = Debug|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|Any CPU.ActiveCfg = Release|x64
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|Any CPU.Build.0 = Release|x64
 	EndGlobalSection
 EndGlobal
