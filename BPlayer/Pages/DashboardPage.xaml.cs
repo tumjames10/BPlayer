@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using BPlayer.Models;
 using BPlayer.Services;
@@ -42,11 +43,16 @@ public partial class DashboardPage : Page
     private string? _dragPlaylistName;
 
 
+    private Storyboard? _pulseAnim;
+    private Storyboard? _dotsAnim;
+
     public DashboardPage(ObservableCollection<VideoItem> allVideos, List<Playlist> playlists)
     {
         _allVideos = allVideos;
         _playlists = playlists;
         InitializeComponent();
+        _pulseAnim = TryFindResource("PulseAnim") as Storyboard;
+        _dotsAnim = TryFindResource("DotsAnim") as Storyboard;
         PlaylistList.ItemsSource = _playlists;
         _ = RefreshFolderListAsync();
         ShowAllVideos();
@@ -54,6 +60,22 @@ public partial class DashboardPage : Page
         Unloaded += (_, _) => { StopFileWatchers(); _mediaInfoService.Dispose(); };
         _ = InitFromConfigAsync();
         PopulateThemeSwitcher();
+    }
+
+    private void ShowLoadingOverlay(string title, string subtitle)
+    {
+        LoadingTitle.Text = title;
+        LoadingSubtitle.Text = subtitle;
+        LoadingOverlay.Visibility = Visibility.Visible;
+        _pulseAnim?.Begin(LoadingPulse, true);
+        _dotsAnim?.Begin(LoadingDots, true);
+    }
+
+    private void HideLoadingOverlay()
+    {
+        _pulseAnim?.Stop(LoadingPulse);
+        _dotsAnim?.Stop(LoadingDots);
+        LoadingOverlay.Visibility = Visibility.Collapsed;
     }
 
     private void ShowAllVideos()
@@ -1121,7 +1143,7 @@ public partial class DashboardPage : Page
             {
                 Logger.Info("Settings saved — reloading dashboard");
                 _animateNextLoad = _allVideos.Count == 0;
-                LoadingOverlay.Visibility = Visibility.Visible;
+                ShowLoadingOverlay("Scanning folders", "Looking for video files...");
                 ShowProgress();
                 try
                 {
@@ -1149,7 +1171,7 @@ public partial class DashboardPage : Page
                 {
                     Logger.Error($"Settings reload error: {ex.Message}");
                 }
-                LoadingOverlay.Visibility = Visibility.Collapsed;
+                HideLoadingOverlay();
                 ShowAllVideos();
                 HideProgress();
                 Logger.Info("Dashboard reload complete");
@@ -1185,7 +1207,7 @@ public partial class DashboardPage : Page
     {
         if (_isRefreshing) return;
         _isRefreshing = true;
-        LoadingOverlay.Visibility = Visibility.Visible;
+        ShowLoadingOverlay("Refreshing", "Scanning for new videos...");
         ShowProgress();
         try
         {
@@ -1236,7 +1258,7 @@ public partial class DashboardPage : Page
         }
         finally
         {
-            LoadingOverlay.Visibility = Visibility.Collapsed;
+            HideLoadingOverlay();
             HideProgress();
             _isRefreshing = false;
         }

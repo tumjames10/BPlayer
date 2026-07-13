@@ -11,6 +11,23 @@
     <Page.Resources>
         <conv:BoolToVisibilityConverter x:Key="BoolVis" />
 
+        <!-- Loading spinner animation -->
+        <Storyboard x:Key="PulseAnim" RepeatBehavior="Forever" AutoReverse="True">
+            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                             From="0.3" To="1" Duration="0:0:0.8" />
+            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleX"
+                             From="0.85" To="1.15" Duration="0:0:0.8" />
+            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleY"
+                             From="0.85" To="1.15" Duration="0:0:0.8" />
+        </Storyboard>
+        <Storyboard x:Key="DotsAnim" RepeatBehavior="Forever">
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity">
+                <LinearDoubleKeyFrame Value="0.3" KeyTime="0:0:0.0" />
+                <LinearDoubleKeyFrame Value="1" KeyTime="0:0:0.6" />
+                <LinearDoubleKeyFrame Value="0.3" KeyTime="0:0:1.2" />
+            </DoubleAnimationUsingKeyFrames>
+        </Storyboard>
+
         <Style x:Key="PosterCard" TargetType="Border">
             <Setter Property="Width" Value="240" />
             <Setter Property="Height" Value="360" />
@@ -719,13 +736,35 @@
 
             <!-- Loading overlay -->
             <Border Grid.Row="1" Grid.RowSpan="5" x:Name="LoadingOverlay" Visibility="Collapsed"
-                    Background="#CC000000">
-                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <TextBlock x:Name="LoadingText" Text="Scanning folders..."
-                               FontSize="16" Foreground="White"
-                               HorizontalAlignment="Center" Margin="0,0,0,12" />
-                    <TextBlock Text="⏳" FontSize="40" HorizontalAlignment="Center" />
-                </StackPanel>
+                    Background="{DynamicResource BgDarkBrush}">
+                <Border Background="{DynamicResource BgCardBrush}" CornerRadius="20"
+                        VerticalAlignment="Center" HorizontalAlignment="Center"
+                        Padding="48,44" BorderBrush="{DynamicResource BorderColorBrush}"
+                        BorderThickness="1" MinWidth="320">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="24" Opacity="0.25" ShadowDepth="6" Color="Black" />
+                    </Border.Effect>
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock x:Name="LoadingPulse" Text="●"
+                                   FontSize="32" Foreground="{DynamicResource AccentBrush}"
+                                   RenderTransformOrigin="0.5,0.5"
+                                   HorizontalAlignment="Center" Margin="0,0,0,16">
+                            <TextBlock.RenderTransform>
+                                <ScaleTransform />
+                            </TextBlock.RenderTransform>
+                        </TextBlock>
+                        <TextBlock x:Name="LoadingTitle" Text="Scanning folders"
+                                   FontSize="20" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                   HorizontalAlignment="Center" />
+                        <TextBlock x:Name="LoadingSubtitle" Text="Looking for video files..."
+                                   FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}"
+                                   HorizontalAlignment="Center" Margin="0,4,0,0" />
+                        <TextBlock x:Name="LoadingDots" Text=". . ."
+                                   FontSize="28" Foreground="{DynamicResource TextSecondaryBrush}"
+                                   HorizontalAlignment="Center" Margin="0,8,0,0" />
+                    </StackPanel>
+                </Border>
             </Border>
         </Grid>
         </ScrollViewer>
