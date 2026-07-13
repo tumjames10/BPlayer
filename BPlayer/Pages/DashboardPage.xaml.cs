@@ -48,7 +48,7 @@ public partial class DashboardPage : Page
         _playlists = playlists;
         InitializeComponent();
         PlaylistList.ItemsSource = _playlists;
-        RefreshFolderList();
+        _ = RefreshFolderListAsync();
         ShowAllVideos();
         allVideos.CollectionChanged += (_, _) => UpdateContinueWatching();
         Unloaded += (_, _) => { StopFileWatchers(); _mediaInfoService.Dispose(); };
@@ -1138,7 +1138,7 @@ public partial class DashboardPage : Page
                 _collections = config.Collections ?? new();
                 RefreshPlaylistList();
                 RefreshCollectionsSidebar();
-                RefreshFolderList();
+                await RefreshFolderListAsync();
 
                 ShowAllVideos();
                 HideProgress();
@@ -1218,7 +1218,7 @@ public partial class DashboardPage : Page
             RefreshCollectionsSidebar();
 
             RefreshPlaylistList();
-            RefreshFolderList();
+            await RefreshFolderListAsync();
             RefreshCurrentView();
             SetupFileWatchers(config.VideoSourcePaths);
             Logger.Info("Refresh complete");
@@ -1322,12 +1322,11 @@ public partial class DashboardPage : Page
         return collections;
     }
 
-    private void RefreshFolderList()
+    private async Task RefreshFolderListAsync()
     {
-        var folders = _allVideos
-            .Select(v => Path.GetDirectoryName(v.FilePath))
-            .Where(f => !string.IsNullOrEmpty(f))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
+        var config = await _configService.LoadAsync();
+        var folders = config.VideoSourcePaths
+            .Where(Directory.Exists)
             .OrderBy(f => f)
             .ToList();
         FolderListSidebar.ItemsSource = folders;
