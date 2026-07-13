@@ -32,6 +32,9 @@ New-Item -ItemType Directory -Path $LayoutDir -Force | Out-Null
 
 # Copy published app files
 Get-ChildItem -Path $PublishDir -File | Copy-Item -Destination $LayoutDir
+# Copy native LibVLC directory (required at runtime)
+$vlcSrc = "$PublishDir\libvlc"
+if (Test-Path $vlcSrc) { Copy-Item -Path $vlcSrc -Destination $LayoutDir -Recurse -Force }
 
 # Copy assets
 $AppxAssetsDir = "$LayoutDir\Assets"
