@@ -308,21 +308,61 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <Grid Margin="20,12,20,8">
+                        <Grid Margin="20,12,20,0">
                             <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="COLLECTIONS" FontSize="10"
+                            <Border Grid.Column="0" Width="3" Height="14" CornerRadius="2"
+                                    Background="{DynamicResource AccentBrush}" Margin="0,0,10,0"
+                                    VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1" Text="COLLECTIONS" FontSize="10"
                                        FontWeight="Bold" Foreground="{DynamicResource TextSecondaryBrush}"
                                        VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="1" x:Name="DetectCollectionsBtn"
+                            <TextBlock Grid.Column="2" x:Name="CollectionsInfoBtn"
+                                       Text="ⓘ" FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}"
+                                       Cursor="Hand" VerticalAlignment="Center" Margin="6,0,6,0"
+                                       MouseLeftButtonDown="OnCollectionsInfoClick" />
+                            <TextBlock Grid.Column="3" x:Name="DetectCollectionsBtn"
                                        Text="⟳" FontSize="16" Foreground="{DynamicResource AccentBrush}"
                                        Cursor="Hand" FontWeight="Bold"
                                        MouseLeftButtonDown="OnDetectCollectionsClick"
                                        ToolTip="Auto-detect collections" />
                         </Grid>
-                        <ItemsControl x:Name="CollectionsSidebar">
+
+                        <!-- Collections info popup -->
+                        <Border x:Name="CollectionsInfoPopup" Visibility="Collapsed"
+                                Background="{DynamicResource BgSurfaceBrush}" CornerRadius="10"
+                                BorderBrush="{DynamicResource BorderColorBrush}" BorderThickness="1"
+                                Margin="20,4,16,0" Padding="14,12">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="16" Opacity="0.3" ShadowDepth="4" Color="Black" />
+                            </Border.Effect>
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <TextBlock Text="📚" FontSize="14" Margin="0,0,8,0" />
+                                    <TextBlock Text="What are Collections?" FontSize="12" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                                <TextBlock Text="Collections group related videos automatically based on file names."
+                                           FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"
+                                           TextWrapping="Wrap" Margin="0,0,0,6" />
+                                <TextBlock Text="• TV shows: &quot;Show S01E01&quot; → &quot;Show&quot;"
+                                           FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"
+                                           Margin="0,0,0,2" />
+                                <TextBlock Text="• Multi-part: &quot;Title Part 1&quot; → &quot;Title&quot;"
+                                           FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"
+                                           Margin="0,0,0,2" />
+                                <TextBlock Text="Click ⟳ to scan for new collections."
+                                           FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"
+                                           Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Border>
+
+                        <ItemsControl x:Name="CollectionsSidebar" Margin="0,4,0,0">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border Style="{StaticResource SidebarItem}"

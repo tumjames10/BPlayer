@@ -1291,6 +1291,12 @@ public partial class DashboardPage : Page
         }
     }
 
+    private void OnCollectionsInfoClick(object sender, MouseButtonEventArgs e)
+    {
+        CollectionsInfoPopup.Visibility = CollectionsInfoPopup.Visibility == Visibility.Visible
+            ? Visibility.Collapsed : Visibility.Visible;
+    }
+
     private async void OnDetectCollectionsClick(object sender, MouseButtonEventArgs e)
     {
         var detected = AutoDetectCollections();
