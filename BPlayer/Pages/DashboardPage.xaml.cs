@@ -117,7 +117,9 @@ public partial class DashboardPage : Page
         HideProgress();
         UpdateContinueWatching();
         UpdateRecentSection();
-        EmptyOverlay.Visibility = _currentVideos.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        var isEmpty = _currentVideos.Count == 0;
+        EmptyOverlay.Visibility = isEmpty ? Visibility.Visible : Visibility.Collapsed;
+        if (isEmpty) SidebarPlaylistActions.Visibility = Visibility.Collapsed;
 
         if (_animateNextLoad && _currentVideos.Count > 0)
         {

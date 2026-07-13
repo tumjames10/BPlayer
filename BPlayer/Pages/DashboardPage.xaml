@@ -189,7 +189,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
@@ -217,26 +217,28 @@
                 </StackPanel>
 
                 <!-- Folders section -->
-                <StackPanel Grid.Row="2" Margin="0,12,0,0">
-                    <TextBlock Text="FOLDERS" FontSize="10" FontWeight="Bold"
-                               Foreground="{DynamicResource TextSecondaryBrush}" Margin="20,0,20,8" />
-                    <ItemsControl x:Name="FolderListSidebar">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Style="{StaticResource SidebarItem}"
-                                        MouseLeftButtonDown="OnFolderClick"
-                                        Tag="{Binding}">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="📁" FontSize="12" Margin="0,0,10,0" Foreground="{DynamicResource TextPrimaryBrush}" />
-                                        <TextBlock Text="{Binding}"
-                                                   Foreground="{DynamicResource TextPrimaryBrush}"
-                                                   FontSize="13" />
-                                    </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </StackPanel>
+                <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Background="Transparent">
+                    <StackPanel Margin="0,12,0,0">
+                        <TextBlock Text="FOLDERS" FontSize="10" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" Margin="20,0,20,8" />
+                        <ItemsControl x:Name="FolderListSidebar">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource SidebarItem}"
+                                            MouseLeftButtonDown="OnFolderClick"
+                                            Tag="{Binding}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="📁" FontSize="12" Margin="0,0,10,0" Foreground="{DynamicResource TextPrimaryBrush}" />
+                                            <TextBlock Text="{Binding}"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                                       FontSize="13" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
 
                 <!-- Playlists section -->
                 <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto"
