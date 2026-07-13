@@ -133,8 +133,16 @@ public partial class DashboardPage : Page
             VideosListView.ItemsSource = _currentVideos;
         }
         HideProgress();
-        UpdateContinueWatching();
-        UpdateRecentSection();
+        if (_currentView == "__all__")
+        {
+            UpdateContinueWatching();
+            UpdateRecentSection();
+        }
+        else
+        {
+            ContinueWatchingSection.Visibility = Visibility.Collapsed;
+            RecentSection.Visibility = Visibility.Collapsed;
+        }
         var isEmpty = _currentVideos.Count == 0;
         EmptyOverlay.Visibility = isEmpty ? Visibility.Visible : Visibility.Collapsed;
         if (isEmpty) SidebarPlaylistActions.Visibility = Visibility.Collapsed;
@@ -1299,10 +1307,15 @@ public partial class DashboardPage : Page
 
     private async void OnDetectCollectionsClick(object sender, MouseButtonEventArgs e)
     {
+        if (_allVideos.Count == 0)
+        {
+            MessageBox.Show("No videos loaded. Add folders in Settings first.", "No collections found", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
         var detected = AutoDetectCollections();
         if (detected.Count == 0)
         {
-            MessageBox.Show("No common patterns detected among your video files.", "No collections found", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("No common patterns detected among your video files.\nTry different file naming or add videos grouped in folders.", "No collections found", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -1350,6 +1363,25 @@ public partial class DashboardPage : Page
             .Where(g => g.Count() >= 2 && g.Key.Length > 2);
 
         foreach (var group in prefixGroups)
+        {
+            if (!collections.Any(c => c.Name.Equals(group.Key, StringComparison.OrdinalIgnoreCase)))
+                collections.Add(new Collection { Name = group.Key, VideoPaths = group.Select(x => x.FilePath).ToList() });
+        }
+
+        var folderGrouped = new HashSet<string>(collections.SelectMany(c => c.VideoPaths));
+
+        // 3. Group by parent folder (handles numbered files grouped in season-like folders)
+        var folderGroups = titles
+            .Where(t => !folderGrouped.Contains(t.FilePath))
+            .Select(t => new
+            {
+                Folder = Path.GetFileName(Path.GetDirectoryName(t.FilePath)) ?? "Unknown",
+                t.FilePath
+            })
+            .GroupBy(x => x.Folder)
+            .Where(g => g.Count() >= 3);
+
+        foreach (var group in folderGroups)
         {
             if (!collections.Any(c => c.Name.Equals(group.Key, StringComparison.OrdinalIgnoreCase)))
                 collections.Add(new Collection { Name = group.Key, VideoPaths = group.Select(x => x.FilePath).ToList() });
