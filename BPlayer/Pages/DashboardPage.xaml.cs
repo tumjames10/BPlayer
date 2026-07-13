@@ -43,16 +43,14 @@ public partial class DashboardPage : Page
     private string? _dragPlaylistName;
 
 
-    private Storyboard? _pulseAnim;
-    private Storyboard? _dotsAnim;
+    private Storyboard? _spinnerAnim;
 
     public DashboardPage(ObservableCollection<VideoItem> allVideos, List<Playlist> playlists)
     {
         _allVideos = allVideos;
         _playlists = playlists;
         InitializeComponent();
-        _pulseAnim = TryFindResource("PulseAnim") as Storyboard;
-        _dotsAnim = TryFindResource("DotsAnim") as Storyboard;
+        _spinnerAnim = TryFindResource("SpinnerAnim") as Storyboard;
         PlaylistList.ItemsSource = _playlists;
         _ = RefreshFolderListAsync();
         ShowAllVideos();
@@ -67,14 +65,12 @@ public partial class DashboardPage : Page
         LoadingTitle.Text = title;
         LoadingSubtitle.Text = subtitle;
         LoadingOverlay.Visibility = Visibility.Visible;
-        _pulseAnim?.Begin(LoadingPulse, true);
-        _dotsAnim?.Begin(LoadingDots, true);
+        _spinnerAnim?.Begin();
     }
 
     private void HideLoadingOverlay()
     {
-        _pulseAnim?.Stop(LoadingPulse);
-        _dotsAnim?.Stop(LoadingDots);
+        _spinnerAnim?.Stop();
         LoadingOverlay.Visibility = Visibility.Collapsed;
     }
 
