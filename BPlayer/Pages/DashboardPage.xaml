@@ -668,9 +668,9 @@
                 </ItemsControl>
 
             <Border Grid.Row="1" Grid.RowSpan="5" x:Name="EmptyOverlay" Visibility="Collapsed"
-                    Background="{DynamicResource BgDarkBrush}"
-                    VerticalAlignment="Center" HorizontalAlignment="Center">
+                    Background="{DynamicResource BgDarkBrush}">
                 <Border Background="{DynamicResource BgCardBrush}" CornerRadius="20"
+                        VerticalAlignment="Center" HorizontalAlignment="Center"
                         Padding="48,44" BorderBrush="{DynamicResource BorderColorBrush}"
                         BorderThickness="1" MaxWidth="440">
                     <Border.Effect>
@@ -715,6 +715,17 @@
                         </Border>
                     </StackPanel>
                 </Border>
+            </Border>
+
+            <!-- Loading overlay -->
+            <Border Grid.Row="1" Grid.RowSpan="5" x:Name="LoadingOverlay" Visibility="Collapsed"
+                    Background="#CC000000">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <TextBlock x:Name="LoadingText" Text="Scanning folders..."
+                               FontSize="16" Foreground="White"
+                               HorizontalAlignment="Center" Margin="0,0,0,12" />
+                    <TextBlock Text="⏳" FontSize="40" HorizontalAlignment="Center" />
+                </StackPanel>
             </Border>
         </Grid>
         </ScrollViewer>

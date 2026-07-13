@@ -1121,27 +1121,35 @@ public partial class DashboardPage : Page
             {
                 Logger.Info("Settings saved — reloading dashboard");
                 _animateNextLoad = _allVideos.Count == 0;
+                LoadingOverlay.Visibility = Visibility.Visible;
                 ShowProgress();
-                var config = await _configService.LoadAsync();
-                Logger.Info($"Folders in config: {string.Join("; ", config.VideoSourcePaths)}");
-                var videos = await _scannerService.ScanDirectoriesAsync(config.VideoSourcePaths);
-                Logger.Info($"Scanned {videos.Count} videos");
-
-                _allVideos.Clear();
-                foreach (var v in videos) _allVideos.Add(v);
-
-                if (config.EnableOnlineMetadata || config.EnableVideoThumbnails)
+                try
                 {
-                    _enricherService = new MetadataEnricherService(new HttpClient { Timeout = TimeSpan.FromSeconds(10) }, config.MetadataSources);
-                    await _enricherService.EnrichAsync(_allVideos, config.EnableOnlineMetadata, config.EnableVideoThumbnails);
+                    var config = await _configService.LoadAsync();
+                    Logger.Info($"Folders in config: {string.Join("; ", config.VideoSourcePaths)}");
+                    var videos = await _scannerService.ScanDirectoriesAsync(config.VideoSourcePaths);
+                    Logger.Info($"Scanned {videos.Count} videos");
+
+                    _allVideos.Clear();
+                    foreach (var v in videos) _allVideos.Add(v);
+
+                    if (config.EnableOnlineMetadata || config.EnableVideoThumbnails)
+                    {
+                        _enricherService = new MetadataEnricherService(new HttpClient { Timeout = TimeSpan.FromSeconds(10) }, config.MetadataSources);
+                        await _enricherService.EnrichAsync(_allVideos, config.EnableOnlineMetadata, config.EnableVideoThumbnails);
+                    }
+
+                    _playlists = config.Playlists ?? new();
+                    _collections = config.Collections ?? new();
+                    RefreshPlaylistList();
+                    RefreshCollectionsSidebar();
+                    await RefreshFolderListAsync();
                 }
-
-                _playlists = config.Playlists ?? new();
-                _collections = config.Collections ?? new();
-                RefreshPlaylistList();
-                RefreshCollectionsSidebar();
-                await RefreshFolderListAsync();
-
+                catch (Exception ex)
+                {
+                    Logger.Error($"Settings reload error: {ex.Message}");
+                }
+                LoadingOverlay.Visibility = Visibility.Collapsed;
                 ShowAllVideos();
                 HideProgress();
                 Logger.Info("Dashboard reload complete");
@@ -1177,6 +1185,7 @@ public partial class DashboardPage : Page
     {
         if (_isRefreshing) return;
         _isRefreshing = true;
+        LoadingOverlay.Visibility = Visibility.Visible;
         ShowProgress();
         try
         {
@@ -1227,6 +1236,7 @@ public partial class DashboardPage : Page
         }
         finally
         {
+            LoadingOverlay.Visibility = Visibility.Collapsed;
             HideProgress();
             _isRefreshing = false;
         }
