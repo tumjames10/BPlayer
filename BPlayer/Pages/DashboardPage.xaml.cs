@@ -1322,7 +1322,7 @@ public partial class DashboardPage : Page
         var titles = _allVideos.Select(v => (v.Title, v.FilePath)).ToList();
 
         // 1. Detect episode patterns: "Show Name S01E01" -> extract show name
-        var episodeRegex = new Regex(@"^(.+?)[.\s_]*[Ss]\d+[Ee]\d+", RegexOptions.Compiled);
+        var episodeRegex = new Regex(@"^(.+?)[.\s_-]*[Ss]\d+[Ee]\d+", RegexOptions.Compiled);
         var episodeGroups = titles
             .Select(t => new { Match = episodeRegex.Match(t.Title), t.FilePath })
             .Where(x => x.Match.Success)
@@ -1335,7 +1335,7 @@ public partial class DashboardPage : Page
         var groupedPaths = new HashSet<string>(collections.SelectMany(c => c.VideoPaths));
 
         // 2. Group by common prefix (files sharing same base name differentiated by "Part X", number suffix, etc.)
-        var partRegex = new Regex(@"^(.+?)[.\s]*(?:Part|Pt|Chapter|Ch|Vol|Volume)?[.\s]*\d+$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        var partRegex = new Regex(@"^(.+?)[.\s_-]*(?:Part|Pt|Chapter|Ch|Vol|Volume)?[.\s_-]*\d+$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         var remaining = titles.Where(t => !groupedPaths.Contains(t.FilePath)).ToList();
 
         var prefixGroups = remaining

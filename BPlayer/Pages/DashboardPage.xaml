@@ -356,6 +356,9 @@
                                 <TextBlock Text="• Multi-part: &quot;Title Part 1&quot; → &quot;Title&quot;"
                                            FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"
                                            Margin="0,0,0,2" />
+                                <TextBlock Text="• Numbered: &quot;name-001&quot; → &quot;name&quot; (handles dash separators)"
+                                           FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"
+                                           Margin="0,0,0,2" />
                                 <TextBlock Text="Click ⟳ to scan for new collections."
                                            FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"
                                            Margin="0,4,0,0" />
