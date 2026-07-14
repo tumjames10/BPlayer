@@ -1159,26 +1159,31 @@ public partial class DashboardPage : Page
                     _allVideos.Clear();
                     foreach (var v in videos) _allVideos.Add(v);
 
-                    if (config.EnableOnlineMetadata || config.EnableVideoThumbnails)
-                    {
-                        _enricherService = new MetadataEnricherService(new HttpClient { Timeout = TimeSpan.FromSeconds(10) }, config.MetadataSources);
-                        await _enricherService.EnrichAsync(_allVideos, config.EnableOnlineMetadata, config.EnableVideoThumbnails);
-                    }
-
                     _playlists = config.Playlists ?? new();
                     _collections = config.Collections ?? new();
                     RefreshPlaylistList();
                     RefreshCollectionsSidebar();
                     await RefreshFolderListAsync();
+
+                    HideLoadingOverlay();
+                    ShowAllVideos();
+                    HideProgress();
+
+                    // Enrich in background — dashboard is visible immediately
+                    if (config.EnableOnlineMetadata || config.EnableVideoThumbnails)
+                    {
+                        _enricherService = new MetadataEnricherService(new HttpClient { Timeout = TimeSpan.FromSeconds(10) }, config.MetadataSources);
+                        _ = _enricherService.EnrichAsync(_allVideos, config.EnableOnlineMetadata, config.EnableVideoThumbnails);
+                    }
+
+                    Logger.Info("Dashboard reload complete");
                 }
                 catch (Exception ex)
                 {
                     Logger.Error($"Settings reload error: {ex.Message}");
+                    HideLoadingOverlay();
+                    HideProgress();
                 }
-                HideLoadingOverlay();
-                ShowAllVideos();
-                HideProgress();
-                Logger.Info("Dashboard reload complete");
             }
         }
         finally
@@ -1238,14 +1243,6 @@ public partial class DashboardPage : Page
             foreach (var v in newVideos)
                 _allVideos.Add(v);
 
-            // Only enrich new videos (thumbnails + metadata)
-            if (newVideos.Count > 0 && (config.EnableOnlineMetadata || config.EnableVideoThumbnails))
-            {
-                var newCollection = new ObservableCollection<VideoItem>(newVideos);
-                _enricherService = new MetadataEnricherService(new HttpClient { Timeout = TimeSpan.FromSeconds(10) }, config.MetadataSources);
-                await _enricherService.EnrichAsync(newCollection, config.EnableOnlineMetadata, config.EnableVideoThumbnails);
-            }
-
             // Remove stale playlist entries
             foreach (var pl in _playlists)
                 pl.VideoPaths.RemoveAll(p => !_allVideos.Any(v => v.FilePath == p));
@@ -1258,6 +1255,15 @@ public partial class DashboardPage : Page
             await RefreshFolderListAsync();
             RefreshCurrentView();
             SetupFileWatchers(config.VideoSourcePaths);
+
+            // Enrich new videos in background
+            if (newVideos.Count > 0 && (config.EnableOnlineMetadata || config.EnableVideoThumbnails))
+            {
+                var newCollection = new ObservableCollection<VideoItem>(newVideos);
+                _enricherService = new MetadataEnricherService(new HttpClient { Timeout = TimeSpan.FromSeconds(10) }, config.MetadataSources);
+                _ = _enricherService.EnrichAsync(newCollection, config.EnableOnlineMetadata, config.EnableVideoThumbnails);
+            }
+
             Logger.Info("Refresh complete");
         }
         finally
@@ -1339,7 +1345,7 @@ public partial class DashboardPage : Page
         var episodeGroups = titles
             .Select(t => new { Match = episodeRegex.Match(t.Title), t.FilePath })
             .Where(x => x.Match.Success)
-            .GroupBy(x => x.Match.Groups[1].Value.Trim().Replace(".", " ").Replace("_", " "))
+            .GroupBy(x => FilenameUtils.CleanTitleForSearch(x.Match.Groups[1].Value))
             .Where(g => g.Count() >= 2);
 
         foreach (var group in episodeGroups)
@@ -1355,8 +1361,8 @@ public partial class DashboardPage : Page
             .Select(t => new
             {
                 Base = partRegex.Match(t.Title).Success
-                    ? partRegex.Match(t.Title).Groups[1].Value.Trim().Replace(".", " ").Replace("_", " ")
-                    : t.Title,
+                    ? FilenameUtils.CleanTitleForSearch(partRegex.Match(t.Title).Groups[1].Value)
+                    : FilenameUtils.CleanTitleForSearch(t.Title),
                 t.FilePath
             })
             .GroupBy(x => x.Base)
@@ -1375,7 +1381,7 @@ public partial class DashboardPage : Page
             .Where(t => !folderGrouped.Contains(t.FilePath))
             .Select(t => new
             {
-                Folder = Path.GetFileName(Path.GetDirectoryName(t.FilePath)) ?? "Unknown",
+                Folder = FilenameUtils.CleanTitleForSearch(Path.GetFileName(Path.GetDirectoryName(t.FilePath)) ?? "Unknown"),
                 t.FilePath
             })
             .GroupBy(x => x.Folder)
@@ -1719,22 +1725,11 @@ public partial class DashboardPage : Page
     {
         if (e.Delta == 0) return;
 
-        var target = e.OriginalSource as System.Windows.DependencyObject;
-        if (target != null && (IsChildOfScrollViewer(target, ContinueWatchingScroll) || IsChildOfScrollViewer(target, RecentScroll)))
+        if (sender is ScrollViewer sv)
         {
-            OuterScrollViewer.ScrollToVerticalOffset(OuterScrollViewer.VerticalOffset - e.Delta);
+            sv.ScrollToVerticalOffset(sv.VerticalOffset + e.Delta);
             e.Handled = true;
         }
-    }
-
-    private static bool IsChildOfScrollViewer(System.Windows.DependencyObject element, System.Windows.Controls.ScrollViewer sv)
-    {
-        while (element != null)
-        {
-            if (element == sv) return true;
-            element = System.Windows.Media.VisualTreeHelper.GetParent(element);
-        }
-        return false;
     }
 
     private void UpdateScrollButtons(System.Windows.Controls.ScrollViewer sv, System.Windows.UIElement leftBtn, System.Windows.UIElement rightBtn)
