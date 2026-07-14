@@ -413,3 +413,115 @@ public class VideoThumbnailer
         data.SaveTo(fs);
     }
 }
+
+public class PreviewFrameGenerator
+{
+    private const int CaptureW = 320;
+    private const int CaptureH = 180;
+
+    public static List<string> GenerateFrames(string videoPath, string outputDir)
+    {
+        if (!File.Exists(videoPath))
+            return new List<string>();
+
+        Directory.CreateDirectory(outputDir);
+
+        var results = new List<string>();
+        float[] positions = { 0.10f, 0.30f, 0.50f, 0.70f, 0.90f };
+
+        IntPtr hwnd = IntPtr.Zero;
+        IntPtr libvlc = IntPtr.Zero;
+        IntPtr mp = IntPtr.Zero;
+
+        try
+        {
+            hwnd = NativeMethods.CreateWindowEx(
+                NativeMethods.WS_EX_NOACTIVATE | NativeMethods.WS_EX_TOOLWINDOW,
+                "static", "", NativeMethods.WS_POPUP,
+                0, 0, 1, 1, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
+
+            var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            var pluginPath = Path.Combine(baseDir, "libvlc", "win-x64", "plugins");
+
+            var args = new[] {
+                "--no-audio", "--intf", "dummy",
+                $"--plugin-path={pluginPath}",
+                "--no-video-title-show", "--network-caching=200"
+            };
+
+            libvlc = NativeMethods.libvlc_new(args.Length, args);
+            if (libvlc == IntPtr.Zero) return results;
+
+            var media = NativeMethods.libvlc_media_new_path(libvlc, videoPath);
+            if (media == IntPtr.Zero) return results;
+
+            mp = NativeMethods.libvlc_media_player_new_from_media(media);
+            NativeMethods.libvlc_media_release(media);
+            if (mp == IntPtr.Zero) return results;
+
+            NativeMethods.libvlc_media_player_set_hwnd(mp, hwnd);
+            if (NativeMethods.libvlc_media_player_play(mp) == -1) return results;
+
+            var started = false;
+            for (int i = 0; i < 75; i++)
+            {
+                if (NativeMethods.libvlc_media_player_is_playing(mp) == 1)
+                { started = true; break; }
+                Thread.Sleep(200);
+            }
+            if (!started) return results;
+
+            for (int i = 0; i < positions.Length; i++)
+            {
+                NativeMethods.libvlc_media_player_set_position(mp, positions[i]);
+                Thread.Sleep(1500);
+
+                var tempPath = Path.Combine(outputDir, $"__tmp_{i}.jpg");
+                var hr = NativeMethods.libvlc_video_take_snapshot(mp, 0, tempPath, CaptureW, CaptureH);
+                Thread.Sleep(1000);
+
+                if (hr == 0 && File.Exists(tempPath))
+                {
+                    var fi = new FileInfo(tempPath);
+                    if (fi.Length > 500)
+                    {
+                        var finalPath = Path.Combine(outputDir, $"preview_{i + 1}.jpg");
+                        try
+                        {
+                            if (File.Exists(finalPath)) File.Delete(finalPath);
+                            File.Move(tempPath, finalPath);
+                        }
+                        catch
+                        {
+                            File.Copy(tempPath, finalPath, true);
+                            try { File.Delete(tempPath); } catch { }
+                        }
+                        results.Add(finalPath);
+                    }
+                    else
+                    {
+                        try { File.Delete(tempPath); } catch { }
+                    }
+                }
+            }
+
+            return results;
+        }
+        catch
+        {
+            return results;
+        }
+        finally
+        {
+            if (mp != IntPtr.Zero)
+            {
+                NativeMethods.libvlc_media_player_stop(mp);
+                NativeMethods.libvlc_media_player_release(mp);
+            }
+            if (libvlc != IntPtr.Zero)
+                NativeMethods.libvlc_release(libvlc);
+            if (hwnd != IntPtr.Zero)
+                NativeMethods.DestroyWindow(hwnd);
+        }
+    }
+}

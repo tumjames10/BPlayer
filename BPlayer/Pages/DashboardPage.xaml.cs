@@ -14,6 +14,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using BPlayer.Models;
 using BPlayer.Services;
+using BPlayer.ThumbnailCore;
 
 namespace BPlayer.Pages;
 
@@ -292,6 +293,8 @@ public partial class DashboardPage : Page
         PreviewCol.Width = new GridLength(0);
         MainContentCol.Width = new GridLength(1, GridUnitType.Star);
         PreviewPanel.Visibility = Visibility.Collapsed;
+        PreviewThumbnailsSection.Visibility = Visibility.Collapsed;
+        PreviewThumbnailsPanel.Children.Clear();
     }
 
     private void OnTileClick(object sender, MouseButtonEventArgs e)
@@ -549,6 +552,9 @@ public partial class DashboardPage : Page
             VideoInfoSection.Visibility = Visibility.Collapsed;
             _ = LoadMediaInfoAsync(video);
         }
+
+        // Generate 5 preview thumbnails from different video positions (background)
+        _ = LoadPreviewThumbnailsAsync(video);
     }
 
     private void ShowMediaInfo(VideoItem video)
@@ -562,6 +568,57 @@ public partial class DashboardPage : Page
         InfoResolution.Visibility = !string.IsNullOrEmpty(video.MediaInfoResolution) ? Visibility.Visible : Visibility.Collapsed;
         InfoCodec.Visibility = !string.IsNullOrEmpty(video.MediaInfoCodec) ? Visibility.Visible : Visibility.Collapsed;
         InfoBitrate.Visibility = video.MediaInfoBitrate > 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private async System.Threading.Tasks.Task LoadPreviewThumbnailsAsync(VideoItem video)
+    {
+        try
+        {
+            var paths = await PreviewThumbnailService.GenerateThumbnailsAsync(video.FilePath);
+            if (paths.Count == 0) return;
+
+            await Dispatcher.InvokeAsync(() =>
+            {
+                if (_selectedVideo != video) return;
+                PopulatePreviewThumbnails(paths);
+            });
+        }
+        catch (Exception ex)
+        {
+            Logger.Warn($"Preview thumbnails failed: {ex.Message}");
+        }
+    }
+
+    private void PopulatePreviewThumbnails(List<string> paths)
+    {
+        PreviewThumbnailsPanel.Children.Clear();
+        foreach (var path in paths)
+        {
+            if (!File.Exists(path)) continue;
+
+            var border = new Border
+            {
+                Width = 112,
+                Height = 63,
+                Margin = new System.Windows.Thickness(0, 0, 6, 6),
+                CornerRadius = new CornerRadius(6),
+                ClipToBounds = true,
+                Cursor = Cursors.Hand,
+                Background = System.Windows.Media.Brushes.Black
+            };
+
+            var img = new System.Windows.Controls.Image
+            {
+                Source = new System.Windows.Media.Imaging.BitmapImage(new Uri(path)),
+                Stretch = System.Windows.Media.Stretch.UniformToFill
+            };
+            border.Child = img;
+            PreviewThumbnailsPanel.Children.Add(border);
+        }
+
+        PreviewThumbnailsSection.Visibility = paths.Count > 0
+            ? Visibility.Visible
+            : Visibility.Collapsed;
     }
 
     private async System.Threading.Tasks.Task LoadMediaInfoAsync(VideoItem video)
