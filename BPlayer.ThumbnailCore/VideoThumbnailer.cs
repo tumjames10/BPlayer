@@ -416,8 +416,8 @@ public class VideoThumbnailer
 
 public class PreviewFrameGenerator
 {
-    private const int CaptureW = 320;
-    private const int CaptureH = 180;
+    private const int CaptureW = 640;
+    private const int CaptureH = 360;
 
     public static List<string> GenerateFrames(string videoPath, string outputDir)
     {

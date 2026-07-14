@@ -643,7 +643,7 @@ public partial class DashboardPage : Page
                 FontWeight = System.Windows.FontWeights.SemiBold
             };
 
-            // Play icon overlay (center, visible on hover)
+            // Magnify icon overlay (center, visible on hover)
             var playOverlay = new Border
             {
                 Background = System.Windows.Media.Brushes.Transparent,
@@ -654,13 +654,30 @@ public partial class DashboardPage : Page
             };
             var playIcon = new TextBlock
             {
-                Text = "▶",
+                Text = "🔍",
                 Foreground = System.Windows.Media.Brushes.White,
-                FontSize = 22,
+                FontSize = 20,
                 HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
                 VerticalAlignment = System.Windows.VerticalAlignment.Center
             };
             playOverlay.Child = playIcon;
+
+            // Border around magnifier on hover
+            var magBorder = new Border
+            {
+                Width = 40,
+                Height = 40,
+                CornerRadius = new CornerRadius(20),
+                Background = new System.Windows.Media.SolidColorBrush(
+                    System.Windows.Media.Color.FromArgb(140, 0, 0, 0)),
+                BorderBrush = new System.Windows.Media.SolidColorBrush(
+                    System.Windows.Media.Color.FromArgb(100, 255, 255, 255)),
+                BorderThickness = new System.Windows.Thickness(1.5),
+                HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
+                VerticalAlignment = System.Windows.VerticalAlignment.Center
+            };
+            magBorder.Child = playIcon;
+            playOverlay.Child = magBorder;
 
             // Shadow effect
             var shadow = new System.Windows.Media.Effects.DropShadowEffect
@@ -680,7 +697,7 @@ public partial class DashboardPage : Page
             {
                 var anim = new System.Windows.Media.Animation.DoubleAnimation
                 {
-                    To = 1.05,
+                    To = 1.20,
                     Duration = TimeSpan.FromSeconds(0.2),
                     EasingFunction = new System.Windows.Media.Animation.QuadraticEase
                     { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
