@@ -592,18 +592,28 @@ public partial class DashboardPage : Page
     private void PopulatePreviewThumbnails(List<string> paths)
     {
         PreviewThumbnailsPanel.Children.Clear();
-        foreach (var path in paths)
+        var positions = new[] { "10%", "30%", "50%", "70%", "90%" };
+
+        for (int i = 0; i < paths.Count; i++)
         {
+            var path = paths[i];
             if (!File.Exists(path)) continue;
+            var posLabel = i < positions.Length ? positions[i] : "";
+
+            var grid = new Grid
+            {
+                Width = 128,
+                Height = 72,
+                Margin = new System.Windows.Thickness(0, 0, 8, 8),
+                Cursor = Cursors.Hand,
+                RenderTransformOrigin = new System.Windows.Point(0.5, 0.5)
+            };
+            grid.RenderTransform = new System.Windows.Media.ScaleTransform(1.0, 1.0);
 
             var border = new Border
             {
-                Width = 112,
-                Height = 63,
-                Margin = new System.Windows.Thickness(0, 0, 6, 6),
-                CornerRadius = new CornerRadius(6),
+                CornerRadius = new CornerRadius(8),
                 ClipToBounds = true,
-                Cursor = Cursors.Hand,
                 Background = System.Windows.Media.Brushes.Black
             };
 
@@ -613,12 +623,214 @@ public partial class DashboardPage : Page
                 Stretch = System.Windows.Media.Stretch.UniformToFill
             };
             border.Child = img;
-            PreviewThumbnailsPanel.Children.Add(border);
+
+            // Position label overlay (top-left)
+            var posOverlay = new Border
+            {
+                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(180, 0, 0, 0)),
+                CornerRadius = new CornerRadius(4),
+                Padding = new System.Windows.Thickness(5, 2, 5, 2),
+                Margin = new System.Windows.Thickness(5, 5, 0, 0),
+                HorizontalAlignment = System.Windows.HorizontalAlignment.Left,
+                VerticalAlignment = System.Windows.VerticalAlignment.Top,
+                IsHitTestVisible = false
+            };
+            posOverlay.Child = new TextBlock
+            {
+                Text = posLabel,
+                Foreground = System.Windows.Media.Brushes.White,
+                FontSize = 10,
+                FontWeight = System.Windows.FontWeights.SemiBold
+            };
+
+            // Play icon overlay (center, visible on hover)
+            var playOverlay = new Border
+            {
+                Background = System.Windows.Media.Brushes.Transparent,
+                HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch,
+                VerticalAlignment = System.Windows.VerticalAlignment.Stretch,
+                IsHitTestVisible = false,
+                Opacity = 0
+            };
+            var playIcon = new TextBlock
+            {
+                Text = "▶",
+                Foreground = System.Windows.Media.Brushes.White,
+                FontSize = 22,
+                HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
+                VerticalAlignment = System.Windows.VerticalAlignment.Center
+            };
+            playOverlay.Child = playIcon;
+
+            // Shadow effect
+            var shadow = new System.Windows.Media.Effects.DropShadowEffect
+            {
+                BlurRadius = 8,
+                Opacity = 0.35,
+                ShadowDepth = 3,
+                Color = System.Windows.Media.Colors.Black
+            };
+            grid.Effect = shadow;
+
+            // Store the path for click handler
+            var capturedPath = path;
+            var capturedPos = posLabel;
+
+            grid.MouseEnter += (_, _) =>
+            {
+                var anim = new System.Windows.Media.Animation.DoubleAnimation
+                {
+                    To = 1.05,
+                    Duration = TimeSpan.FromSeconds(0.2),
+                    EasingFunction = new System.Windows.Media.Animation.QuadraticEase
+                    { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
+                };
+                (grid.RenderTransform as System.Windows.Media.ScaleTransform)?.BeginAnimation(
+                    System.Windows.Media.ScaleTransform.ScaleXProperty, anim);
+                (grid.RenderTransform as System.Windows.Media.ScaleTransform)?.BeginAnimation(
+                    System.Windows.Media.ScaleTransform.ScaleYProperty, anim);
+
+                var shadowAnim = new System.Windows.Media.Animation.DoubleAnimation
+                {
+                    To = 16,
+                    Duration = TimeSpan.FromSeconds(0.2),
+                    EasingFunction = new System.Windows.Media.Animation.QuadraticEase
+                    { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
+                };
+                grid.Effect.BeginAnimation(
+                    System.Windows.Media.Effects.DropShadowEffect.BlurRadiusProperty, shadowAnim);
+
+                var opacityAnim = new System.Windows.Media.Animation.DoubleAnimation
+                {
+                    To = 1,
+                    Duration = TimeSpan.FromSeconds(0.2)
+                };
+                playOverlay.BeginAnimation(OpacityProperty, opacityAnim);
+                playOverlay.Background = new System.Windows.Media.SolidColorBrush(
+                    System.Windows.Media.Color.FromArgb(100, 0, 0, 0));
+            };
+
+            grid.MouseLeave += (_, _) =>
+            {
+                var anim = new System.Windows.Media.Animation.DoubleAnimation
+                {
+                    To = 1.0,
+                    Duration = TimeSpan.FromSeconds(0.25),
+                    EasingFunction = new System.Windows.Media.Animation.QuadraticEase
+                    { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
+                };
+                (grid.RenderTransform as System.Windows.Media.ScaleTransform)?.BeginAnimation(
+                    System.Windows.Media.ScaleTransform.ScaleXProperty, anim);
+                (grid.RenderTransform as System.Windows.Media.ScaleTransform)?.BeginAnimation(
+                    System.Windows.Media.ScaleTransform.ScaleYProperty, anim);
+
+                var shadowAnim = new System.Windows.Media.Animation.DoubleAnimation
+                {
+                    To = 8,
+                    Duration = TimeSpan.FromSeconds(0.25),
+                    EasingFunction = new System.Windows.Media.Animation.QuadraticEase
+                    { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
+                };
+                grid.Effect.BeginAnimation(
+                    System.Windows.Media.Effects.DropShadowEffect.BlurRadiusProperty, shadowAnim);
+
+                var opacityAnim = new System.Windows.Media.Animation.DoubleAnimation
+                {
+                    To = 0,
+                    Duration = TimeSpan.FromSeconds(0.2)
+                };
+                playOverlay.BeginAnimation(OpacityProperty, opacityAnim);
+            };
+
+            grid.MouseLeftButtonDown += (_, _) =>
+            {
+                ShowPreviewThumbnailPopup(capturedPath, capturedPos);
+            };
+
+            grid.Children.Add(border);
+            grid.Children.Add(posOverlay);
+            grid.Children.Add(playOverlay);
+            PreviewThumbnailsPanel.Children.Add(grid);
         }
 
         PreviewThumbnailsSection.Visibility = paths.Count > 0
             ? Visibility.Visible
             : Visibility.Collapsed;
+    }
+
+    private void ShowPreviewThumbnailPopup(string imagePath, string positionLabel)
+    {
+        try
+        {
+            var win = Window.GetWindow(this);
+            if (win == null) return;
+
+            var overlay = new Border
+            {
+                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(180, 0, 0, 0)),
+                CornerRadius = new CornerRadius(12),
+                Padding = new System.Windows.Thickness(20),
+                BorderBrush = new System.Windows.Media.SolidColorBrush(
+                    System.Windows.Media.Color.FromRgb(0x2a, 0x2a, 0x3e)),
+                BorderThickness = new System.Windows.Thickness(1)
+            };
+            overlay.Effect = new System.Windows.Media.Effects.DropShadowEffect
+            {
+                BlurRadius = 24,
+                Opacity = 0.5,
+                ShadowDepth = 6,
+                Color = System.Windows.Media.Colors.Black
+            };
+
+            var stack = new StackPanel();
+
+            var img = new System.Windows.Controls.Image
+            {
+                Source = new System.Windows.Media.Imaging.BitmapImage(new Uri(imagePath)),
+                Stretch = System.Windows.Media.Stretch.Uniform,
+                MaxWidth = 640,
+                MaxHeight = 480,
+                Margin = new System.Windows.Thickness(0, 0, 0, 12)
+            };
+            stack.Children.Add(img);
+
+            var info = new TextBlock
+            {
+                Text = string.IsNullOrEmpty(positionLabel) ? "Frame Preview" : $"Frame at {positionLabel}",
+                Foreground = new System.Windows.Media.SolidColorBrush(
+                    System.Windows.Media.Color.FromRgb(0x9c, 0xa3, 0xaf)),
+                FontSize = 12,
+                HorizontalAlignment = System.Windows.HorizontalAlignment.Center
+            };
+            stack.Children.Add(info);
+
+            overlay.Child = stack;
+
+            var popup = new Window
+            {
+                Content = overlay,
+                WindowStyle = WindowStyle.None,
+                AllowsTransparency = true,
+                Background = null,
+                Topmost = true,
+                ShowInTaskbar = false,
+                ResizeMode = ResizeMode.NoResize,
+                SizeToContent = System.Windows.SizeToContent.WidthAndHeight,
+                WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner,
+                Owner = win,
+                Title = "Scene Preview"
+            };
+
+            popup.MouseLeftButtonDown += (_, _) => popup.Close();
+            popup.Deactivated += (_, _) => popup.Close();
+            popup.KeyDown += (_, e) => { if (e.Key == Key.Escape) popup.Close(); };
+
+            popup.ShowDialog();
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Preview popup failed: {ex.Message}");
+        }
     }
 
     private async System.Threading.Tasks.Task LoadMediaInfoAsync(VideoItem video)
