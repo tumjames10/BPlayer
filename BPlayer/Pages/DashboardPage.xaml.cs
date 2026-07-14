@@ -660,8 +660,6 @@ public partial class DashboardPage : Page
                 HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
                 VerticalAlignment = System.Windows.VerticalAlignment.Center
             };
-            playOverlay.Child = playIcon;
-
             // Border around magnifier on hover
             var magBorder = new Border
             {
