@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text.Json;
+using BPlayer.Models;
 
 namespace BPlayer.Services;
 
@@ -130,12 +131,4 @@ public class PlaybackStateService
             return _states.TryGetValue(filePath, out var state) && state.IsWatched;
         }
     }
-}
-
-internal class VideoPlaybackState
-{
-    public string FilePath { get; set; } = string.Empty;
-    public double PositionSeconds { get; set; }
-    public bool IsWatched { get; set; }
-    public DateTime LastPlayed { get; set; }
 }

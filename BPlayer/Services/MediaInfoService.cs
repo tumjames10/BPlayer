@@ -52,14 +52,16 @@ public class MediaInfoService : IDisposable
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.Warn($"MediaInfoService: error processing track: {ex.Message}");
             }
 
             return result;
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.Warn($"MediaInfoService: failed to get media info: {ex.Message}");
             return null;
         }
     }
@@ -78,8 +80,9 @@ public class MediaInfoService : IDisposable
             var str = System.Text.Encoding.ASCII.GetString(bytes).TrimEnd('\0');
             return string.IsNullOrEmpty(str) ? null : str;
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.Warn($"MediaInfoService: FourCC conversion failed: {ex.Message}");
             return null;
         }
     }
@@ -98,8 +101,9 @@ public class MediaInfoService : IDisposable
             }
             _libVlc = new LibVLC("--quiet", "--no-osd", "--plugin-path=" + pluginPath);
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.Warn($"MediaInfoService: VLC init failed: {ex.Message}");
             _initFailed = true;
             _libVlc = null;
         }

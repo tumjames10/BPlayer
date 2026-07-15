@@ -58,7 +58,7 @@ public class MetadataEnricherService
             };
             File.WriteAllText(MetaCachePath(video.FilePath), JsonSerializer.Serialize(meta));
         }
-        catch { }
+        catch (Exception ex) { Logger.Warn($"Failed to save meta cache: {ex.Message}"); }
     }
 
     private static CachedMeta? LoadMetaCache(string videoPath)

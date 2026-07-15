@@ -69,6 +69,25 @@
         <vlc:VideoView x:Name="VlcPlayer" Grid.Row="0"
                        Cursor="Hand" Background="Black" />
 
+        <!-- Loading overlay -->
+        <Border x:Name="LoadingOverlay" Grid.Row="0" Background="#CC000000"
+                Visibility="Collapsed" IsHitTestVisible="False">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Border x:Name="SpinnerRing" Width="48" Height="48"
+                        CornerRadius="24" BorderThickness="3"
+                        BorderBrush="{DynamicResource AccentBrush}"
+                        Background="Transparent"
+                        RenderTransformOrigin="0.5,0.5">
+                    <Border.RenderTransform>
+                        <RotateTransform x:Name="SpinnerRotation" Angle="0" />
+                    </Border.RenderTransform>
+                </Border>
+                <TextBlock x:Name="LoadingText" Text="Loading video…"
+                           Foreground="#cccccc" FontSize="14"
+                           HorizontalAlignment="Center" Margin="0,16,0,0" />
+            </StackPanel>
+        </Border>
+
         <!-- Screenshot notification -->
         <TextBlock x:Name="ScreenshotNotif" Grid.Row="0"
                    Text="📷 Screenshot saved"

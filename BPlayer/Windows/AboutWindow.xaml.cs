@@ -28,7 +28,7 @@ public partial class AboutWindow : Window
             };
             Process.Start(psi);
         }
-        catch { }
+        catch (Exception ex) { BPlayer.Services.Logger.Warn($"AboutWindow: failed to open link: {ex.Message}"); }
         e.Handled = true;
     }
 

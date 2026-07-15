@@ -297,7 +297,7 @@ public partial class DashboardPage : Page
             var config = _configService.GetSavedThemeName();
             ThemeSwitcher.SelectedItem = config ?? "Dark";
         }
-        catch { ThemeSwitcher.SelectedIndex = 0; }
+        catch (Exception ex) { Logger.Warn($"Failed to load saved theme: {ex.Message}"); ThemeSwitcher.SelectedIndex = 0; }
     }
 
     private void OnThemeSelected(object sender, SelectionChangedEventArgs e)
@@ -499,8 +499,9 @@ public partial class DashboardPage : Page
                 PreviewGradient.Fill = brush;
                 PreviewGradient.Effect = blur;
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.Warn($"Preview gradient failed: {ex.Message}");
                 PreviewGradient.Fill = ColorExtractor.CreateGradientBrush(fallbackPalette);
                 PreviewGradient.Effect = null;
             }
@@ -840,6 +841,10 @@ public partial class DashboardPage : Page
                 Color = System.Windows.Media.Colors.Black
             };
 
+            Window? popup = null;
+            var closing = false;
+            var layout = new Grid();
+
             var stack = new StackPanel();
 
             var img = new System.Windows.Controls.Image
@@ -862,9 +867,37 @@ public partial class DashboardPage : Page
             };
             stack.Children.Add(info);
 
-            overlay.Child = stack;
+            layout.Children.Add(stack);
 
-            var popup = new Window
+            var closeBtn = new Border
+            {
+                Width = 30, Height = 30,
+                CornerRadius = new CornerRadius(15),
+                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(100, 0, 0, 0)),
+                Cursor = System.Windows.Input.Cursors.Hand,
+                HorizontalAlignment = System.Windows.HorizontalAlignment.Right,
+                VerticalAlignment = System.Windows.VerticalAlignment.Top,
+                Margin = new System.Windows.Thickness(0, 8, 8, 0),
+                Child = new TextBlock
+                {
+                    Text = "✕",
+                    FontSize = 13,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xcc, 0xcc, 0xcc)),
+                    HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
+                    VerticalAlignment = System.Windows.VerticalAlignment.Center
+                }
+            };
+            closeBtn.MouseEnter += (_, _) =>
+                closeBtn.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(200, 0, 0, 0));
+            closeBtn.MouseLeave += (_, _) =>
+                closeBtn.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(100, 0, 0, 0));
+            closeBtn.MouseLeftButtonDown += (_, _) => { if (!closing) { closing = true; popup?.Close(); } };
+            layout.Children.Add(closeBtn);
+
+            overlay.Child = layout;
+
+            popup = new Window
             {
                 Content = overlay,
                 WindowStyle = WindowStyle.None,
@@ -879,9 +912,8 @@ public partial class DashboardPage : Page
                 Title = "Scene Preview"
             };
 
-            popup.MouseLeftButtonDown += (_, _) => popup.Close();
-            popup.Deactivated += (_, _) => popup.Close();
-            popup.KeyDown += (_, e) => { if (e.Key == Key.Escape) popup.Close(); };
+            popup.Deactivated += (_, _) => { if (!closing) { closing = true; popup.Close(); } };
+            popup.KeyDown += (_, e) => { if (e.Key == Key.Escape && !closing) { closing = true; popup.Close(); } };
 
             popup.ShowDialog();
         }
@@ -1063,7 +1095,7 @@ public partial class DashboardPage : Page
             if (File.Exists(video.CustomPosterPath))
                 File.Delete(video.CustomPosterPath);
         }
-        catch { }
+        catch (Exception ex) { Logger.Warn($"Failed to delete custom poster: {ex.Message}"); }
         video.CustomPosterPath = null;
 
         if (_selectedVideo == video)
@@ -1536,7 +1568,7 @@ public partial class DashboardPage : Page
             };
             System.Diagnostics.Process.Start(psi);
         }
-        catch { }
+        catch (Exception ex) { Logger.Warn($"Failed to open feedback link: {ex.Message}"); }
     }
 
     private async void OnRefreshClick(object sender, RoutedEventArgs e)
@@ -1787,7 +1819,7 @@ public partial class DashboardPage : Page
         foreach (var w in _fileWatchers)
         {
             try { w.EnableRaisingEvents = false; w.Dispose(); }
-            catch { }
+            catch (Exception ex) { Logger.Warn($"FileWatcher dispose: {ex.Message}"); }
         }
         _fileWatchers.Clear();
     }
@@ -1926,7 +1958,7 @@ public partial class DashboardPage : Page
             _collections = config.Collections ?? new();
             RefreshCollectionsSidebar();
         }
-        catch { }
+        catch (Exception ex) { Logger.Warn($"Failed to load settings: {ex.Message}"); }
     }
 
     private void UpdateContinueWatching()

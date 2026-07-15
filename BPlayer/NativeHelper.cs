@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using BPlayer.Services;
 
 namespace BPlayer;
 
@@ -87,8 +88,9 @@ internal static class NativeHelper
             Marshal.Release(ppv);
             return path;
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.Warn($"NativeHelper: folder picker failed: {ex.Message}");
             return null;
         }
     }

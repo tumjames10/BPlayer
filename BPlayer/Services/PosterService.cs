@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using BPlayer.Models;
 
 namespace BPlayer.Services;
@@ -25,11 +24,4 @@ public class PosterService
         Logger.Info($"PosterService: no useful result for '{title}'");
         return null;
     }
-}
-
-public class PosterFetchResult
-{
-    public double Rating { get; set; }
-    public int Year { get; set; }
-    public string? PosterUrl { get; set; }
 }

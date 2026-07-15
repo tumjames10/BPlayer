@@ -46,7 +46,7 @@ public static class UrlConfigService
                 new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(ConfigPath, json);
         }
-        catch { }
+        catch (Exception ex) { Logger.Error($"Failed to save URL config: {ex.Message}"); }
     }
 
     public static UrlPresets GetDefaults() => new()

@@ -44,7 +44,7 @@ public class ThumbnailService
                     if (fi.Length > 500)
                         video.ThumbnailUrl = cachePath;
                 }
-                catch { }
+                catch (Exception ex) { Logger.Warn($"ThumbnailService: skipping invalid cached file: {ex.Message}"); }
             }
         }
     }
@@ -91,7 +91,7 @@ public class ThumbnailService
                 if (fi.Length > 500) return cachePath;
                 File.Delete(cachePath);
             }
-            catch { }
+            catch (Exception ex) { Logger.Warn($"ThumbnailService: cache file error: {ex.Message}"); }
         }
 
         _throttle.Wait();

@@ -1,6 +1,5 @@
 using System.Net.Http;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace BPlayer.Services;
 
@@ -15,11 +14,17 @@ public class RatingService
         _http = http;
         var config = UrlConfigService.Load();
         _baseUrl = config.RatingServiceUrl ?? "https://www.omdbapi.com/";
-        _apiKey = config.RatingServiceApiKey ?? "trilogy";
+        _apiKey = config.RatingServiceApiKey ?? "";
     }
 
     public async Task<double> FetchRatingAsync(string title)
     {
+        if (string.IsNullOrEmpty(_apiKey))
+        {
+            Logger.Warn("RatingService: no API key configured");
+            return 0;
+        }
+
         try
         {
             var url = $"{_baseUrl}?t={Uri.EscapeDataString(title)}&apikey={_apiKey}";
@@ -33,7 +38,10 @@ public class RatingService
                 return rating;
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Logger.Warn($"RatingService: failed to fetch rating for '{title}': {ex.Message}");
+        }
 
         return 0;
     }

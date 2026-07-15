@@ -6,24 +6,43 @@ namespace BPlayer;
 
 public partial class App : System.Windows.Application
 {
+    private void ReportStartupError(string context, string message)
+    {
+        try { Logger.Error($"{context}: {message}"); } catch { }
+        MessageBox.Show($"{context}:\n{message}\n\nThe application may not work correctly.",
+            "Startup Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
+
+    private void SafeLoggerInit()
+    {
+        try
+        {
+            var logDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BPlayer");
+            Directory.CreateDirectory(logDir);
+        }
+        catch { }
+    }
+
     protected override void OnStartup(System.Windows.StartupEventArgs e)
     {
-        try { SafeLoggerInit(); } catch { }
+        SafeLoggerInit();
 
         DispatcherUnhandledException += (_, args) =>
         {
             try { Logger.Error($"Unhandled: {args.Exception.Message}"); } catch { }
+            MessageBox.Show($"An unexpected error occurred:\n{args.Exception.Message}",
+                "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             args.Handled = true;
         };
 
         AppDomain.CurrentDomain.UnhandledException += (_, args) =>
         {
-            try
-            {
-                var ex = args.ExceptionObject as Exception;
-                try { Logger.Error($"Fatal: {ex?.Message}"); } catch { }
-            }
-            catch { }
+            var ex = args.ExceptionObject as Exception;
+            var msg = ex?.Message ?? "Unknown fatal error";
+            try { Logger.Error($"Fatal: {msg}"); } catch { }
+            MessageBox.Show($"A fatal error occurred:\n{msg}",
+                "Fatal Error", MessageBoxButton.OK, MessageBoxImage.Error);
         };
 
         try
@@ -36,7 +55,7 @@ public partial class App : System.Windows.Application
         }
         catch (Exception ex)
         {
-            try { Logger.Error($"Theme init failed: {ex.Message}"); } catch { }
+            ReportStartupError("Theme initialization", ex.Message);
             try { ThemeService.ApplyTheme("Dark"); } catch { }
         }
 
@@ -56,7 +75,7 @@ public partial class App : System.Windows.Application
         }
         catch (Exception ex)
         {
-            try { Logger.Error($"Failed to create app data directories: {ex.Message}"); } catch { }
+            ReportStartupError("Directory setup", ex.Message);
         }
 
         try
@@ -70,20 +89,9 @@ public partial class App : System.Windows.Application
         }
         catch (Exception ex)
         {
-            try { Logger.Error($"VLC init failed: {ex.Message}"); } catch { }
+            ReportStartupError("VLC initialization", ex.Message);
         }
 
         base.OnStartup(e);
-    }
-
-    private static void SafeLoggerInit()
-    {
-        try
-        {
-            var logDir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BPlayer");
-            Directory.CreateDirectory(logDir);
-        }
-        catch { }
     }
 }

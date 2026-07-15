@@ -44,6 +44,7 @@ public partial class DetailPage : Page
     private const int UpdateIntervalMs = 250;
     private const int HideControlsDelaySec = 3;
     private const int SeekStepMs = 10000;
+    private const int LoadingTimeoutMs = 10000;
     private const int VolumeStep = 5;
     private const int MaxVolume = 200;
     private const int DefaultVolume = 100;
@@ -65,6 +66,7 @@ public partial class DetailPage : Page
         _pointA = null;
         _pointB = null;
         _isLoopingAB = false;
+        StartSpinnerAnimation();
 
         bool hasNext = _playlistVideos != null && _playlistIndex + 1 < _playlistVideos.Count;
         if (NextBtn != null) NextBtn.Visibility = hasNext ? Visibility.Visible : Visibility.Collapsed;
@@ -121,6 +123,9 @@ public partial class DetailPage : Page
 
         _vlcPlayer.Media = _media;
         _vlcPlayer.EndReached += OnMediaEnded;
+        _vlcPlayer.Playing += OnVlcPlaying;
+        _vlcPlayer.Stopped += OnVlcStopped;
+        _vlcPlayer.Buffering += OnVlcBuffering;
 
         _ready = true;
         Logger.Info("VLC Ready");
@@ -137,12 +142,73 @@ public partial class DetailPage : Page
         if (!_vlcPlayer.Play()) { ShowError("Failed to play."); return; }
         _isPlaying = true;
 
+        ShowLoadingOverlay("Loading video…");
+
         var resumePos = _playbackState.GetResumePosition(_video.FilePath);
         if (resumePos.HasValue)
             _vlcPlayer.Time = (long)(resumePos.Value * 1000);
 
         PlayBtn.Content = "⏸";
         _updateTimer.Start();
+    }
+
+    private void ShowLoadingOverlay(string text)
+    {
+        LoadingText.Text = text;
+        LoadingOverlay.Visibility = Visibility.Visible;
+        _loadingTimer?.Stop();
+        _loadingTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(LoadingTimeoutMs) };
+        _loadingTimer.Tick += OnLoadingTimeout;
+        _loadingTimer.Start();
+    }
+
+    private void HideLoadingOverlay()
+    {
+        LoadingOverlay.Visibility = Visibility.Collapsed;
+        _loadingTimer?.Stop();
+        _loadingTimer = null;
+    }
+
+    private void OnVlcPlaying(object? sender, EventArgs e)
+    {
+        Dispatcher.Invoke(() => HideLoadingOverlay());
+    }
+
+    private void OnVlcStopped(object? sender, EventArgs e)
+    {
+        Dispatcher.Invoke(() => HideLoadingOverlay());
+    }
+
+    private void OnVlcBuffering(object? sender, MediaPlayerBufferingEventArgs e)
+    {
+        if (e.Cache < 100)
+        {
+            Dispatcher.Invoke(() => LoadingText.Text = $"Buffering… {e.Cache}%");
+        }
+        else
+        {
+            Dispatcher.Invoke(() => HideLoadingOverlay());
+        }
+    }
+
+    private void OnLoadingTimeout(object? sender, EventArgs e)
+    {
+        _loadingTimer?.Stop();
+        Dispatcher.Invoke(() => HideLoadingOverlay());
+    }
+
+    private DispatcherTimer? _loadingTimer;
+    private DispatcherTimer? _spinnerTimer;
+
+    private void StartSpinnerAnimation()
+    {
+        _spinnerTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(30) };
+        _spinnerTimer.Tick += (_, _) =>
+        {
+            if (SpinnerRing != null && SpinnerRotation != null)
+                SpinnerRotation.Angle = (SpinnerRotation.Angle + 6) % 360;
+        };
+        _spinnerTimer.Start();
     }
 
     private const int WM_MOUSEMOVE = 0x0200;
@@ -227,7 +293,10 @@ public partial class DetailPage : Page
             _keyboardHook = IntPtr.Zero;
             Logger.Info("Keyboard hook removed");
         }
+        HideLoadingOverlay();
         _updateTimer.Stop();
+        _loadingTimer?.Stop();
+        _spinnerTimer?.Stop();
         _ready = false;
         _isPlaying = false;
         VlcPlayer.MediaPlayer = null;
@@ -266,7 +335,7 @@ public partial class DetailPage : Page
             if (r > 0) { _video.Rating = r; RatingText.Text = $"★ {r:F1}"; }
             else RatingText.Text = "N/A";
         }
-        catch { RatingText.Text = "N/A"; }
+        catch (Exception ex) { Logger.Warn($"Rating fetch failed: {ex.Message}"); RatingText.Text = "N/A"; }
     }
 
     private void OnMediaEnded(object? sender, EventArgs e)
@@ -565,7 +634,6 @@ public partial class DetailPage : Page
             ABRepeatLabel.Text = "▶AB";
             ABRepeatLabel.Foreground = System.Windows.Media.Brushes.Lime;
         }
-        UpdateABMarkers();
     }
 
     private void SetPointB()
@@ -580,7 +648,6 @@ public partial class DetailPage : Page
             ABRepeatLabel.Text = "▶AB";
             ABRepeatLabel.Foreground = System.Windows.Media.Brushes.Lime;
         }
-        UpdateABMarkers();
     }
 
     private void ToggleABRepeat()
@@ -599,10 +666,6 @@ public partial class DetailPage : Page
             ABRepeatLabel.Text = "AB";
             ABRepeatLabel.Foreground = System.Windows.Media.Brushes.Orange;
         }
-    }
-
-    private void UpdateABMarkers()
-    {
     }
 
     private void TakeScreenshot()
@@ -853,7 +916,7 @@ public partial class DetailPage : Page
                 }
                 AudioLabel.Text = " Track " + active;
             }
-            catch { AudioLabel.Text = " Track " + active; }
+            catch (Exception ex) { Logger.Warn($"UpdateAudioLabel: {ex.Message}"); AudioLabel.Text = " Track " + active; }
         }
     }
 
@@ -946,7 +1009,7 @@ public partial class DetailPage : Page
                 else
                     SubLabel.Text = " Track " + (active + 1);
             }
-            catch { SubLabel.Text = " Track " + (active + 1); }
+            catch (Exception ex) { Logger.Warn($"UpdateSubtitleLabel: {ex.Message}"); SubLabel.Text = " Track " + (active + 1); }
         }
     }
 
@@ -1129,6 +1192,7 @@ public partial class DetailPage : Page
         _subtitleFontFamily = fontFamily;
         _subtitleFontSize = fontSize;
         _ = SaveSubtitleFontSettingsAsync();
+        ShowLoadingOverlay("Applying subtitle font…");
         RestartPlayback();
     }
 
@@ -1149,25 +1213,24 @@ public partial class DetailPage : Page
         if (!_ready || _vlcPlayer == null) return;
         var position = _vlcPlayer.Time;
         var wasPlaying = _isPlaying;
+        var volume = _vlcPlayer.Volume;
+        var rate = _vlcPlayer.Rate;
+        var audioTrack = _vlcPlayer.AudioTrack;
+        var spu = _vlcPlayer.Spu;
 
         _vlcPlayer.Stop();
-        _vlcPlayer.EndReached -= OnMediaEnded;
         _media?.Dispose();
-        var oldPlayer = _vlcPlayer;
 
         _media = BuildMediaWithSubtitleOptions();
-
-        _vlcPlayer = new VlcMediaPlayer(_libVlc);
-        _vlcPlayer.Volume = DefaultVolume;
-        VlcPlayer.MediaPlayer = _vlcPlayer;
         _vlcPlayer.Media = _media;
-        _vlcPlayer.EndReached += OnMediaEnded;
-
-        oldPlayer.Dispose();
 
         if (wasPlaying)
         {
             _vlcPlayer.Play();
+            _vlcPlayer.Volume = volume;
+            if (Math.Abs(rate - 1.0f) > 0.01f) _vlcPlayer.SetRate(rate);
+            if (audioTrack > 0) _vlcPlayer.SetAudioTrack(audioTrack);
+            if (spu >= 0) _vlcPlayer.SetSpu(spu);
             _vlcPlayer.Time = position;
         }
     }

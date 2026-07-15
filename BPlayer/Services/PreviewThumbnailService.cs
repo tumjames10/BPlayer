@@ -1,17 +1,8 @@
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
+using BPlayer.Models;
 using BPlayer.ThumbnailCore;
 
 namespace BPlayer.Services;
-
-public class PreviewThumbnailResult
-{
-    public List<string> FilePaths { get; set; } = new();
-    public float[] Positions { get; set; } = Array.Empty<float>();
-}
 
 public class PreviewThumbnailService
 {
