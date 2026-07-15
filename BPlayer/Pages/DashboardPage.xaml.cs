@@ -618,8 +618,6 @@ public partial class DashboardPage : Page
         {
             var path = paths[i];
             if (!File.Exists(path)) continue;
-            var pct = i < positions.Length ? positions[i] * 100 : 0f;
-            var posLabel = pct > 0 ? $"{(int)pct}%" : "";
 
             var card = new Border
             {
@@ -658,25 +656,6 @@ public partial class DashboardPage : Page
                 System.Windows.Media.Color.FromArgb(200, 0, 0, 0),
                 new System.Windows.Point(0, 0),
                 new System.Windows.Point(0, 1));
-
-            var badge = new Border
-            {
-                Background = new System.Windows.Media.SolidColorBrush(
-                    System.Windows.Media.Color.FromArgb(180, 0, 0, 0)),
-                CornerRadius = new CornerRadius(4),
-                Padding = new System.Windows.Thickness(6, 2, 6, 2),
-                Margin = new System.Windows.Thickness(6, 0, 0, 5),
-                HorizontalAlignment = System.Windows.HorizontalAlignment.Left,
-                VerticalAlignment = System.Windows.VerticalAlignment.Bottom,
-                IsHitTestVisible = false
-            };
-            badge.Child = new TextBlock
-            {
-                Text = posLabel,
-                Foreground = System.Windows.Media.Brushes.White,
-                FontSize = 10,
-                FontWeight = System.Windows.FontWeights.SemiBold
-            };
 
             var hoverOverlay = new Border
             {
@@ -721,13 +700,11 @@ public partial class DashboardPage : Page
             var layerGrid = new Grid();
             layerGrid.Children.Add(img);
             layerGrid.Children.Add(fadeOverlay);
-            layerGrid.Children.Add(badge);
             layerGrid.Children.Add(hoverOverlay);
             layerGrid.Children.Add(hoverBorder);
             card.Child = layerGrid;
 
             var capturedPath = path;
-            var capturedPos = posLabel;
 
             card.MouseEnter += (_, _) =>
             {
@@ -800,7 +777,7 @@ public partial class DashboardPage : Page
 
             card.MouseLeftButtonDown += (_, _) =>
             {
-                ShowPreviewThumbnailPopup(capturedPath, capturedPos);
+                ShowPreviewThumbnailPopup(capturedPath, "");
             };
 
             PreviewThumbnailsPanel.Children.Add(card);
