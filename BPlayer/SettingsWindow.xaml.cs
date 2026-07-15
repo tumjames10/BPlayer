@@ -206,20 +206,6 @@ public partial class SettingsWindow : Window
         var path = NativeHelper.ShowFolderPicker(hwnd);
         if (path != null && !_folders.Contains(path))
             _folders.Add(path);
-
-        while (path != null)
-        {
-            var result = MessageBox.Show(
-                "Add another folder?",
-                "Add Folders",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question);
-            if (result != MessageBoxResult.Yes) break;
-
-            path = NativeHelper.ShowFolderPicker(hwnd);
-            if (path != null && !_folders.Contains(path))
-                _folders.Add(path);
-        }
     }
 
     private void OnRemoveFolder(object sender, RoutedEventArgs e)
