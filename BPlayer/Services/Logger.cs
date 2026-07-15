@@ -10,9 +10,13 @@ public static class Logger
 
     static Logger()
     {
-        var dir = Path.GetDirectoryName(LogPath);
-        if (dir != null) Directory.CreateDirectory(dir);
-        File.WriteAllText(LogPath, $"=== BPlayer Log {DateTime.Now:yyyy-MM-dd HH:mm:ss} ===\n");
+        try
+        {
+            var dir = Path.GetDirectoryName(LogPath);
+            if (dir != null) Directory.CreateDirectory(dir);
+            File.WriteAllText(LogPath, $"=== BPlayer Log {DateTime.Now:yyyy-MM-dd HH:mm:ss} ===\n");
+        }
+        catch { }
     }
 
     public static void Info(string msg) => Write("INFO", msg);

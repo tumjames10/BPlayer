@@ -8,20 +8,22 @@ public partial class App : System.Windows.Application
 {
     protected override void OnStartup(System.Windows.StartupEventArgs e)
     {
+        try { SafeLoggerInit(); } catch { }
+
         DispatcherUnhandledException += (_, args) =>
         {
-            Logger.Error($"Unhandled: {args.Exception.Message}");
-            MessageBox.Show($"Unhandled error: {args.Exception.Message}\n{args.Exception.StackTrace}",
-                            "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            try { Logger.Error($"Unhandled: {args.Exception.Message}"); } catch { }
             args.Handled = true;
         };
 
         AppDomain.CurrentDomain.UnhandledException += (_, args) =>
         {
-            var ex = args.ExceptionObject as Exception;
-            Logger.Error($"Fatal: {ex?.Message}");
-            MessageBox.Show($"Fatal error: {ex?.Message}", "Fatal",
-                            MessageBoxButton.OK, MessageBoxImage.Error);
+            try
+            {
+                var ex = args.ExceptionObject as Exception;
+                try { Logger.Error($"Fatal: {ex?.Message}"); } catch { }
+            }
+            catch { }
         };
 
         try
@@ -34,8 +36,8 @@ public partial class App : System.Windows.Application
         }
         catch (Exception ex)
         {
-            Logger.Error($"Theme init failed: {ex.Message}");
-            ThemeService.ApplyTheme("Dark");
+            try { Logger.Error($"Theme init failed: {ex.Message}"); } catch { }
+            try { ThemeService.ApplyTheme("Dark"); } catch { }
         }
 
         try
@@ -54,7 +56,7 @@ public partial class App : System.Windows.Application
         }
         catch (Exception ex)
         {
-            Logger.Error($"Failed to create app data directories: {ex.Message}");
+            try { Logger.Error($"Failed to create app data directories: {ex.Message}"); } catch { }
         }
 
         try
@@ -68,9 +70,20 @@ public partial class App : System.Windows.Application
         }
         catch (Exception ex)
         {
-            Logger.Error($"VLC init failed: {ex.Message}");
+            try { Logger.Error($"VLC init failed: {ex.Message}"); } catch { }
         }
 
         base.OnStartup(e);
+    }
+
+    private static void SafeLoggerInit()
+    {
+        try
+        {
+            var logDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BPlayer");
+            Directory.CreateDirectory(logDir);
+        }
+        catch { }
     }
 }
