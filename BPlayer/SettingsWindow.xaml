@@ -70,7 +70,7 @@
 
                 <!-- GENERAL TAB -->
                 <ScrollViewer Grid.Row="1" x:Name="GeneralContent"
-                              VerticalScrollBarVisibility="Auto" Margin="0,16,0,0">
+                              VerticalScrollBarVisibility="Auto" Margin="0,16,0,0" CanContentScroll="False">
                     <StackPanel>
 
                         <!-- ═══ VIDEO FOLDERS ═══ -->
@@ -413,7 +413,7 @@
 
                 <!-- THEMES TAB -->
                 <ScrollViewer Grid.Row="1" x:Name="ThemesContent"
-                              VerticalScrollBarVisibility="Auto" Visibility="Collapsed" Margin="0,16,0,0">
+                              VerticalScrollBarVisibility="Auto" Visibility="Collapsed" Margin="0,16,0,0" CanContentScroll="False">
                     <StackPanel>
 
                         <Border Background="{DynamicResource BgSurfaceBrush}" CornerRadius="10" Padding="0">

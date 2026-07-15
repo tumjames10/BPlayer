@@ -224,7 +224,7 @@
                 </StackPanel>
 
                 <!-- Folders section -->
-                <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Background="Transparent">
+                <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Background="Transparent" CanContentScroll="False">
                     <StackPanel Margin="0,12,0,0">
                         <TextBlock Text="FOLDERS" FontSize="10" FontWeight="Bold"
                                    Foreground="{DynamicResource TextSecondaryBrush}" Margin="20,0,20,8" />
@@ -249,7 +249,7 @@
 
                 <!-- Playlists section -->
                 <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto"
-                              Margin="0,12,0,0" Background="Transparent">
+                              Margin="0,12,0,0" Background="Transparent" CanContentScroll="False">
                     <StackPanel>
                         <Grid Margin="20,0,20,8">
                             <Grid.ColumnDefinitions>
@@ -486,7 +486,7 @@
         <!-- Main content -->
         <ScrollViewer Grid.Column="1" Grid.Row="1" VerticalScrollBarVisibility="Auto"
                       Background="{DynamicResource BgDarkBrush}"
-                      x:Name="OuterScrollViewer">
+                      x:Name="OuterScrollViewer" CanContentScroll="False">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -840,7 +840,7 @@
 
                 <!-- Scrollable info content -->
                 <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="24,16"
-                              x:Name="PreviewScrollViewer">
+                              x:Name="PreviewScrollViewer" CanContentScroll="False">
                     <StackPanel>
 
                         <!-- Poster -->
@@ -947,6 +947,7 @@
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <Border Grid.Column="0" Width="3" Height="14" CornerRadius="2"
                                             Background="{DynamicResource AccentBrush}" Margin="0,0,10,0"
@@ -958,6 +959,22 @@
                                                FontSize="10" FontWeight="SemiBold"
                                                Foreground="{DynamicResource TextSecondaryBrush}"
                                                VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="3" x:Name="PreviewRefreshBtn"
+                                               Text="⟳" FontSize="14" FontWeight="Bold"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                               Cursor="Hand" VerticalAlignment="Center" Margin="8,0,0,0"
+                                               MouseLeftButtonDown="OnPreviewRefreshClick"
+                                               ToolTip="Regenerate scene previews">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
                                 </Grid>
                                 <!-- Loading indicator -->
                                 <Border x:Name="PreviewThumbnailsLoading" Visibility="Collapsed"

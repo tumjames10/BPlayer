@@ -596,7 +596,7 @@ public partial class DashboardPage : Page
         InfoBitrate.Visibility = video.MediaInfoBitrate > 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    private async System.Threading.Tasks.Task LoadPreviewThumbnailsAsync(VideoItem video)
+    private async System.Threading.Tasks.Task LoadPreviewThumbnailsAsync(VideoItem video, bool forceRegenerate = false)
     {
         try
         {
@@ -609,14 +609,14 @@ public partial class DashboardPage : Page
                 PreviewThumbnailsSection.Visibility = Visibility.Visible;
             });
 
-            var result = await PreviewThumbnailService.GenerateThumbnailsAsync(video.FilePath);
-            if (result.FilePaths.Count == 0) return;
+            var result = await PreviewThumbnailService.GenerateThumbnailsAsync(video.FilePath, forceRegenerate);
 
             await Dispatcher.InvokeAsync(() =>
             {
                 if (_selectedVideo != video) return;
                 PreviewThumbnailsLoading.Visibility = Visibility.Collapsed;
-                PopulatePreviewThumbnails(result.FilePaths, result.Positions);
+                if (result.FilePaths.Count > 0)
+                    PopulatePreviewThumbnails(result.FilePaths, result.Positions);
             });
         }
         catch (Exception ex)
@@ -643,8 +643,8 @@ public partial class DashboardPage : Page
 
             var card = new Border
             {
-                Width = 165,
-                Height = 92,
+                Width = 222,
+                Height = 124,
                 Margin = new System.Windows.Thickness(0, 0, 8, 0),
                 CornerRadius = new CornerRadius(8),
                 ClipToBounds = true,
@@ -810,6 +810,12 @@ public partial class DashboardPage : Page
             : Visibility.Collapsed;
     }
 
+    private void OnPreviewRefreshClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (_selectedVideo == null) return;
+        _ = LoadPreviewThumbnailsAsync(_selectedVideo, forceRegenerate: true);
+    }
+
     private void ShowPreviewThumbnailPopup(string imagePath, string positionLabel)
     {
         try
@@ -821,7 +827,7 @@ public partial class DashboardPage : Page
             {
                 Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(180, 0, 0, 0)),
                 CornerRadius = new CornerRadius(12),
-                Padding = new System.Windows.Thickness(20),
+                Padding = new System.Windows.Thickness(30),
                 BorderBrush = new System.Windows.Media.SolidColorBrush(
                     System.Windows.Media.Color.FromRgb(0x2a, 0x2a, 0x3e)),
                 BorderThickness = new System.Windows.Thickness(1)
@@ -840,9 +846,9 @@ public partial class DashboardPage : Page
             {
                 Source = new System.Windows.Media.Imaging.BitmapImage(new Uri(imagePath)),
                 Stretch = System.Windows.Media.Stretch.Uniform,
-                MaxWidth = 640,
-                MaxHeight = 480,
-                Margin = new System.Windows.Thickness(0, 0, 0, 12)
+                MaxWidth = 960,
+                MaxHeight = 720,
+                Margin = new System.Windows.Thickness(0, 0, 0, 18)
             };
             stack.Children.Add(img);
 

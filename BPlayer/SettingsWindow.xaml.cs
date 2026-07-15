@@ -323,29 +323,39 @@ public partial class SettingsWindow : Window
 
         if (result != MessageBoxResult.Yes) return;
 
-        var cacheDir = System.IO.Path.Combine(
+        var thumbCache = System.IO.Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "BPlayer", "thumbcache");
-
-        if (!System.IO.Directory.Exists(cacheDir)) return;
+        var previewCache = System.IO.Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "BPlayer", "previewthumbs");
 
         int deleted = 0, skipped = 0;
-        foreach (var f in System.IO.Directory.GetFiles(cacheDir, "*.jpg"))
+
+        void ClearDir(string dir, string pattern)
         {
-            try
+            if (!System.IO.Directory.Exists(dir)) return;
+            foreach (var f in System.IO.Directory.GetFiles(dir, pattern))
             {
-                System.IO.File.Delete(f);
-                deleted++;
-            }
-            catch (System.IO.IOException)
-            {
-                skipped++;
-            }
-            catch (System.UnauthorizedAccessException)
-            {
-                skipped++;
+                try
+                {
+                    System.IO.File.Delete(f);
+                    deleted++;
+                }
+                catch (System.IO.IOException)
+                {
+                    skipped++;
+                }
+                catch (System.UnauthorizedAccessException)
+                {
+                    skipped++;
+                }
             }
         }
+
+        ClearDir(thumbCache, "*.jpg");
+        ClearDir(previewCache, "*.jpg");
+        ClearDir(previewCache, "_positions.txt");
 
         ClearThumbCacheBtn.Content = skipped > 0
             ? $"✅ Cleared {deleted} ({skipped} in use)"

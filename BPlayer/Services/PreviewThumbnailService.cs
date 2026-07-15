@@ -52,38 +52,70 @@ public class PreviewThumbnailService
         return files.Count == 5 ? files : new List<string>();
     }
 
-    public static Task<PreviewThumbnailResult> GenerateThumbnailsAsync(string videoPath)
+    public static Task<PreviewThumbnailResult> GenerateThumbnailsAsync(string videoPath, bool forceRegenerate = false)
     {
         return Task.Run(() =>
         {
             var dir = GetVideoDir(videoPath);
             Directory.CreateDirectory(dir);
 
-            var positions = ScenePreviewConfig.PickRandomPositions();
-
-            // Check cache first — verify positions match
-            var cached = GetCachedThumbnails(videoPath);
-            var cachedPositions = ReadCachedPositions(dir);
-            if (cached.Count == 5 && cachedPositions != null && cachedPositions.SequenceEqual(positions))
+            if (!forceRegenerate)
             {
+                var cached = GetCachedThumbnails(videoPath);
+                var cachedPositions = ReadCachedPositions(dir);
+                if (cached.Count == 5 && cachedPositions != null && cachedPositions.Length == 5)
+                {
+                    return new PreviewThumbnailResult
+                    {
+                        FilePaths = cached,
+                        Positions = cachedPositions
+                    };
+                }
+            }
+
+            // forceRegenerate: generate to temp dir, swap only on success
+            var positions = ScenePreviewConfig.PickRandomPositions();
+            var tempDir = dir + "_tmp";
+            try { Directory.Delete(tempDir, true); } catch { }
+            Directory.CreateDirectory(tempDir);
+
+            var paths = PreviewFrameGenerator.GenerateFrames(videoPath, tempDir, positions);
+            if (paths.Count >= 3)
+            {
+                // Swap temp into place
+                foreach (var f in Directory.GetFiles(dir, "preview_*.jpg"))
+                    try { File.Delete(f); } catch { }
+                try { File.Delete(GetPositionsFile(dir)); } catch { }
+                foreach (var f in Directory.GetFiles(tempDir, "preview_*.jpg"))
+                {
+                    var name = Path.GetFileName(f);
+                    try { File.Copy(f, Path.Combine(dir, name), true); } catch { }
+                }
+                try { Directory.Delete(tempDir, true); } catch { }
+                WritePositions(dir, positions);
+
+                var finalPaths = GetCachedThumbnails(videoPath);
                 return new PreviewThumbnailResult
                 {
-                    FilePaths = cached,
-                    Positions = positions
+                    FilePaths = finalPaths,
+                    Positions = positions.Take(finalPaths.Count).ToArray()
                 };
             }
 
-            // Clear stale cache
-            foreach (var f in Directory.GetFiles(dir, "preview_*.jpg"))
-                try { File.Delete(f); } catch { }
-
-            var paths = PreviewFrameGenerator.GenerateFrames(videoPath, dir, positions);
-            WritePositions(dir, positions);
-            return new PreviewThumbnailResult
+            // Generation failed — clean up temp, keep existing cache
+            try { Directory.Delete(tempDir, true); } catch { }
+            var fallback = GetCachedThumbnails(videoPath);
+            var fallbackPositions = ReadCachedPositions(dir);
+            if (fallback.Count > 0 && fallbackPositions != null)
             {
-                FilePaths = paths,
-                Positions = positions.Take(paths.Count).ToArray()
-            };
+                return new PreviewThumbnailResult
+                {
+                    FilePaths = fallback,
+                    Positions = fallbackPositions
+                };
+            }
+
+            return new PreviewThumbnailResult();
         });
     }
 
@@ -91,5 +123,14 @@ public class PreviewThumbnailService
     {
         var key = Path.GetFileNameWithoutExtension(videoPath);
         return Path.Combine(PreviewDir, key);
+    }
+
+    public static void ClearCache(string videoPath)
+    {
+        var dir = GetVideoDir(videoPath);
+        if (!Directory.Exists(dir)) return;
+        foreach (var f in Directory.GetFiles(dir, "preview_*.jpg"))
+            try { File.Delete(f); } catch { }
+        try { File.Delete(GetPositionsFile(dir)); } catch { }
     }
 }
