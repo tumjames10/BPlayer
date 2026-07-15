@@ -961,29 +961,25 @@
                                 </Grid>
                                 <!-- Loading indicator -->
                                 <Border x:Name="PreviewThumbnailsLoading" Visibility="Collapsed"
-                                        Margin="0,4,0,4">
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                        <Border Width="18" Height="18" Margin="0,0,8,0"
+                                        HorizontalAlignment="Center" Margin="0,6,0,4">
+                                    <Grid>
+                                        <Border Width="18" Height="18" CornerRadius="9"
+                                                BorderThickness="2"
+                                                BorderBrush="{DynamicResource BorderColorBrush}"
+                                                Opacity="0.25" />
+                                        <Border x:Name="PreviewSpinnerRing" Width="18" Height="18"
+                                                CornerRadius="9" BorderThickness="2"
+                                                BorderBrush="{DynamicResource AccentBrush}"
                                                 RenderTransformOrigin="0.5,0.5">
                                             <Border.RenderTransform>
-                                                <RotateTransform CenterX="9" CenterY="9" />
+                                                <RotateTransform />
                                             </Border.RenderTransform>
-                                            <Grid>
-                                                <Border Width="18" Height="18" CornerRadius="9"
-                                                        BorderThickness="2"
-                                                        BorderBrush="{DynamicResource BorderColorBrush}"
-                                                        Opacity="0.3" />
-                                                <Border Width="18" Height="18" CornerRadius="9"
-                                                        BorderThickness="2"
-                                                        BorderBrush="{DynamicResource AccentBrush}">
-                                                    <Border.OpacityMask>
-                                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                                            <GradientStop Color="White" Offset="0.3" />
-                                                            <GradientStop Color="Transparent" Offset="0.6" />
-                                                        </LinearGradientBrush>
-                                                    </Border.OpacityMask>
-                                                </Border>
-                                            </Grid>
+                                            <Border.OpacityMask>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="White" Offset="0.3" />
+                                                    <GradientStop Color="Transparent" Offset="0.7" />
+                                                </LinearGradientBrush>
+                                            </Border.OpacityMask>
                                             <Border.Triggers>
                                                 <EventTrigger RoutedEvent="Loaded">
                                                     <BeginStoryboard>
@@ -997,8 +993,9 @@
                                         </Border>
                                         <TextBlock Text="Generating previews..." FontSize="11"
                                                    Foreground="{DynamicResource TextSecondaryBrush}"
-                                                   VerticalAlignment="Center" />
-                                    </StackPanel>
+                                                   Margin="24,0,0,0" VerticalAlignment="Center"
+                                                   HorizontalAlignment="Center" />
+                                    </Grid>
                                 </Border>
                                 <WrapPanel x:Name="PreviewThumbnailsPanel" />
                             </StackPanel>
