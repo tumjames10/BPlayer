@@ -642,7 +642,7 @@ public partial class DashboardPage : Page
             var img = new System.Windows.Controls.Image
             {
                 Source = new System.Windows.Media.Imaging.BitmapImage(new Uri(path)),
-                Stretch = System.Windows.Media.Stretch.UniformToFill
+                Stretch = System.Windows.Media.Stretch.Uniform
             };
 
             var fadeOverlay = new Border
