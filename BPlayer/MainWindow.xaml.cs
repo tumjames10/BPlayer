@@ -23,9 +23,14 @@ public partial class MainWindow : Window
     {
         var config = await _configService.LoadAsync();
         var videos = await _scannerService.ScanDirectoriesAsync(config.VideoSourcePaths);
+
         _allVideos = new ObservableCollection<VideoItem>(videos);
 
         var enricher = new MetadataEnricherService(new HttpClient { Timeout = TimeSpan.FromSeconds(10) }, config.MetadataSources);
+
+        // Pre-load cached thumbnails from disk so the UI doesn't show blank placeholders
+        enricher.ThumbnailService.PreloadCachedThumbnails(videos);
+
         _ = enricher.EnrichAsync(_allVideos, config.EnableOnlineMetadata, config.EnableVideoThumbnails);
 
         var dashboard = new DashboardPage(_allVideos, config.Playlists ?? new());

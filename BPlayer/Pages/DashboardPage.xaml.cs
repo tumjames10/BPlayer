@@ -260,7 +260,7 @@ public partial class DashboardPage : Page
                 RecentPanel.Children.Add(border);
             }
 
-            Dispatcher.BeginInvoke(new Action(() => UpdateScrollButtons(RecentScroll, RecentScrollLeftBtn, RecentScrollRightBtn)), System.Windows.Threading.DispatcherPriority.Background);
+            Dispatcher.BeginInvoke(new Action(() => UpdateMarginScrollButtons(RecentPanel, RecentScrollLeftBtn, RecentScrollRightBtn)), System.Windows.Threading.DispatcherPriority.Background);
         }
         catch (Exception ex) { Logger.Warn($"UpdateRecentSection failed: {ex.Message}"); }
     }
@@ -295,6 +295,7 @@ public partial class DashboardPage : Page
         PreviewPanel.Visibility = Visibility.Collapsed;
         PreviewThumbnailsSection.Visibility = Visibility.Collapsed;
         PreviewThumbnailsPanel.Children.Clear();
+        PreviewThumbnailsLoading.Visibility = Visibility.Collapsed;
     }
 
     private void OnTileClick(object sender, MouseButtonEventArgs e)
@@ -553,7 +554,10 @@ public partial class DashboardPage : Page
             _ = LoadMediaInfoAsync(video);
         }
 
-        // Generate 5 preview thumbnails from different video positions (background)
+        // Reset loading indicator before generating
+        PreviewThumbnailsLoading.Visibility = Visibility.Collapsed;
+
+        // Generate scene preview thumbnails from random video positions (background)
         _ = LoadPreviewThumbnailsAsync(video);
     }
 
@@ -574,47 +578,67 @@ public partial class DashboardPage : Page
     {
         try
         {
-            var paths = await PreviewThumbnailService.GenerateThumbnailsAsync(video.FilePath);
-            if (paths.Count == 0) return;
+            // Show loading indicator
+            await Dispatcher.InvokeAsync(() =>
+            {
+                if (_selectedVideo != video) return;
+                PreviewThumbnailsPanel.Children.Clear();
+                PreviewThumbnailsLoading.Visibility = Visibility.Visible;
+                PreviewThumbnailsSection.Visibility = Visibility.Visible;
+            });
+
+            var result = await PreviewThumbnailService.GenerateThumbnailsAsync(video.FilePath);
+            if (result.FilePaths.Count == 0) return;
 
             await Dispatcher.InvokeAsync(() =>
             {
                 if (_selectedVideo != video) return;
-                PopulatePreviewThumbnails(paths);
+                PreviewThumbnailsLoading.Visibility = Visibility.Collapsed;
+                PopulatePreviewThumbnails(result.FilePaths, result.Positions);
             });
         }
         catch (Exception ex)
         {
             Logger.Warn($"Preview thumbnails failed: {ex.Message}");
+            await Dispatcher.InvokeAsync(() =>
+            {
+                PreviewThumbnailsLoading.Visibility = Visibility.Collapsed;
+            });
         }
     }
 
-    private void PopulatePreviewThumbnails(List<string> paths)
+    private void PopulatePreviewThumbnails(List<string> paths, float[]? positions = null)
     {
         PreviewThumbnailsPanel.Children.Clear();
-        var positions = new[] { "10%", "30%", "50%", "70%", "90%" };
+        positions ??= new[] { 0.10f, 0.30f, 0.50f, 0.70f, 0.90f };
+
+        PreviewThumbnailCount.Text = paths.Count > 0 ? $"{paths.Count} scenes" : "";
 
         for (int i = 0; i < paths.Count; i++)
         {
             var path = paths[i];
             if (!File.Exists(path)) continue;
-            var posLabel = i < positions.Length ? positions[i] : "";
+            var pct = i < positions.Length ? positions[i] * 100 : 0f;
+            var posLabel = pct > 0 ? $"{(int)pct}%" : "";
 
-            var grid = new Grid
+            var card = new Border
             {
-                Width = 128,
-                Height = 72,
-                Margin = new System.Windows.Thickness(0, 0, 8, 8),
-                Cursor = Cursors.Hand,
-                RenderTransformOrigin = new System.Windows.Point(0.5, 0.5)
-            };
-            grid.RenderTransform = new System.Windows.Media.ScaleTransform(1.0, 1.0);
-
-            var border = new Border
-            {
+                Width = 165,
+                Height = 92,
+                Margin = new System.Windows.Thickness(0, 0, 8, 0),
                 CornerRadius = new CornerRadius(8),
                 ClipToBounds = true,
+                Cursor = Cursors.Hand,
+                RenderTransformOrigin = new System.Windows.Point(0.5, 0.5),
                 Background = System.Windows.Media.Brushes.Black
+            };
+            card.RenderTransform = new System.Windows.Media.ScaleTransform(1.0, 1.0);
+            card.Effect = new System.Windows.Media.Effects.DropShadowEffect
+            {
+                BlurRadius = 10,
+                Opacity = 0.45,
+                ShadowDepth = 3,
+                Color = System.Windows.Media.Colors.Black
             };
 
             var img = new System.Windows.Controls.Image
@@ -622,20 +646,31 @@ public partial class DashboardPage : Page
                 Source = new System.Windows.Media.Imaging.BitmapImage(new Uri(path)),
                 Stretch = System.Windows.Media.Stretch.UniformToFill
             };
-            border.Child = img;
 
-            // Position label overlay (top-left)
-            var posOverlay = new Border
+            var fadeOverlay = new Border
             {
-                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(180, 0, 0, 0)),
-                CornerRadius = new CornerRadius(4),
-                Padding = new System.Windows.Thickness(5, 2, 5, 2),
-                Margin = new System.Windows.Thickness(5, 5, 0, 0),
-                HorizontalAlignment = System.Windows.HorizontalAlignment.Left,
-                VerticalAlignment = System.Windows.VerticalAlignment.Top,
+                VerticalAlignment = System.Windows.VerticalAlignment.Bottom,
+                Height = 35,
                 IsHitTestVisible = false
             };
-            posOverlay.Child = new TextBlock
+            fadeOverlay.Background = new System.Windows.Media.LinearGradientBrush(
+                System.Windows.Media.Color.FromArgb(0, 0, 0, 0),
+                System.Windows.Media.Color.FromArgb(200, 0, 0, 0),
+                new System.Windows.Point(0, 0),
+                new System.Windows.Point(0, 1));
+
+            var badge = new Border
+            {
+                Background = new System.Windows.Media.SolidColorBrush(
+                    System.Windows.Media.Color.FromArgb(180, 0, 0, 0)),
+                CornerRadius = new CornerRadius(4),
+                Padding = new System.Windows.Thickness(6, 2, 6, 2),
+                Margin = new System.Windows.Thickness(6, 0, 0, 5),
+                HorizontalAlignment = System.Windows.HorizontalAlignment.Left,
+                VerticalAlignment = System.Windows.VerticalAlignment.Bottom,
+                IsHitTestVisible = false
+            };
+            badge.Child = new TextBlock
             {
                 Text = posLabel,
                 Foreground = System.Windows.Media.Brushes.White,
@@ -643,8 +678,7 @@ public partial class DashboardPage : Page
                 FontWeight = System.Windows.FontWeights.SemiBold
             };
 
-            // Magnify icon overlay (center, visible on hover)
-            var playOverlay = new Border
+            var hoverOverlay = new Border
             {
                 Background = System.Windows.Media.Brushes.Transparent,
                 HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch,
@@ -652,67 +686,71 @@ public partial class DashboardPage : Page
                 IsHitTestVisible = false,
                 Opacity = 0
             };
-            var playIcon = new TextBlock
+            var magCircle = new Border
             {
-                Text = "🔍",
-                Foreground = System.Windows.Media.Brushes.White,
-                FontSize = 20,
-                HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
-                VerticalAlignment = System.Windows.VerticalAlignment.Center
-            };
-            // Border around magnifier on hover
-            var magBorder = new Border
-            {
-                Width = 40,
-                Height = 40,
-                CornerRadius = new CornerRadius(20),
+                Width = 36,
+                Height = 36,
+                CornerRadius = new CornerRadius(18),
                 Background = new System.Windows.Media.SolidColorBrush(
-                    System.Windows.Media.Color.FromArgb(140, 0, 0, 0)),
+                    System.Windows.Media.Color.FromArgb(160, 0, 0, 0)),
                 BorderBrush = new System.Windows.Media.SolidColorBrush(
-                    System.Windows.Media.Color.FromArgb(100, 255, 255, 255)),
-                BorderThickness = new System.Windows.Thickness(1.5),
+                    System.Windows.Media.Color.FromRgb(0xe9, 0x45, 0x60)),
+                BorderThickness = new System.Windows.Thickness(2),
                 HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
                 VerticalAlignment = System.Windows.VerticalAlignment.Center
             };
-            magBorder.Child = playIcon;
-            playOverlay.Child = magBorder;
-
-            // Shadow effect
-            var shadow = new System.Windows.Media.Effects.DropShadowEffect
+            magCircle.Child = new TextBlock
             {
-                BlurRadius = 8,
-                Opacity = 0.35,
-                ShadowDepth = 3,
-                Color = System.Windows.Media.Colors.Black
+                Text = "\U0001f50d",
+                FontSize = 16,
+                HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
+                VerticalAlignment = System.Windows.VerticalAlignment.Center
             };
-            grid.Effect = shadow;
+            hoverOverlay.Child = magCircle;
 
-            // Store the path for click handler
+            var hoverBorder = new Border
+            {
+                BorderBrush = new System.Windows.Media.SolidColorBrush(
+                    System.Windows.Media.Color.FromArgb(80, 233, 69, 96)),
+                BorderThickness = new System.Windows.Thickness(1.5),
+                CornerRadius = new CornerRadius(8),
+                IsHitTestVisible = false,
+                Opacity = 0
+            };
+
+            var layerGrid = new Grid();
+            layerGrid.Children.Add(img);
+            layerGrid.Children.Add(fadeOverlay);
+            layerGrid.Children.Add(badge);
+            layerGrid.Children.Add(hoverOverlay);
+            layerGrid.Children.Add(hoverBorder);
+            card.Child = layerGrid;
+
             var capturedPath = path;
             var capturedPos = posLabel;
 
-            grid.MouseEnter += (_, _) =>
+            card.MouseEnter += (_, _) =>
             {
-                var anim = new System.Windows.Media.Animation.DoubleAnimation
+                var scaleAnim = new System.Windows.Media.Animation.DoubleAnimation
                 {
-                    To = 1.20,
+                    To = 1.18,
                     Duration = TimeSpan.FromSeconds(0.2),
                     EasingFunction = new System.Windows.Media.Animation.QuadraticEase
                     { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
                 };
-                (grid.RenderTransform as System.Windows.Media.ScaleTransform)?.BeginAnimation(
-                    System.Windows.Media.ScaleTransform.ScaleXProperty, anim);
-                (grid.RenderTransform as System.Windows.Media.ScaleTransform)?.BeginAnimation(
-                    System.Windows.Media.ScaleTransform.ScaleYProperty, anim);
+                (card.RenderTransform as System.Windows.Media.ScaleTransform)?.BeginAnimation(
+                    System.Windows.Media.ScaleTransform.ScaleXProperty, scaleAnim);
+                (card.RenderTransform as System.Windows.Media.ScaleTransform)?.BeginAnimation(
+                    System.Windows.Media.ScaleTransform.ScaleYProperty, scaleAnim);
 
                 var shadowAnim = new System.Windows.Media.Animation.DoubleAnimation
                 {
-                    To = 16,
+                    To = 20,
                     Duration = TimeSpan.FromSeconds(0.2),
                     EasingFunction = new System.Windows.Media.Animation.QuadraticEase
                     { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
                 };
-                grid.Effect.BeginAnimation(
+                card.Effect.BeginAnimation(
                     System.Windows.Media.Effects.DropShadowEffect.BlurRadiusProperty, shadowAnim);
 
                 var opacityAnim = new System.Windows.Media.Animation.DoubleAnimation
@@ -720,33 +758,35 @@ public partial class DashboardPage : Page
                     To = 1,
                     Duration = TimeSpan.FromSeconds(0.2)
                 };
-                playOverlay.BeginAnimation(OpacityProperty, opacityAnim);
-                playOverlay.Background = new System.Windows.Media.SolidColorBrush(
-                    System.Windows.Media.Color.FromArgb(100, 0, 0, 0));
+                hoverOverlay.BeginAnimation(OpacityProperty, opacityAnim);
+                hoverBorder.BeginAnimation(OpacityProperty, opacityAnim);
+
+                hoverOverlay.Background = new System.Windows.Media.SolidColorBrush(
+                    System.Windows.Media.Color.FromArgb(90, 0, 0, 0));
             };
 
-            grid.MouseLeave += (_, _) =>
+            card.MouseLeave += (_, _) =>
             {
-                var anim = new System.Windows.Media.Animation.DoubleAnimation
+                var scaleAnim = new System.Windows.Media.Animation.DoubleAnimation
                 {
                     To = 1.0,
                     Duration = TimeSpan.FromSeconds(0.25),
                     EasingFunction = new System.Windows.Media.Animation.QuadraticEase
                     { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
                 };
-                (grid.RenderTransform as System.Windows.Media.ScaleTransform)?.BeginAnimation(
-                    System.Windows.Media.ScaleTransform.ScaleXProperty, anim);
-                (grid.RenderTransform as System.Windows.Media.ScaleTransform)?.BeginAnimation(
-                    System.Windows.Media.ScaleTransform.ScaleYProperty, anim);
+                (card.RenderTransform as System.Windows.Media.ScaleTransform)?.BeginAnimation(
+                    System.Windows.Media.ScaleTransform.ScaleXProperty, scaleAnim);
+                (card.RenderTransform as System.Windows.Media.ScaleTransform)?.BeginAnimation(
+                    System.Windows.Media.ScaleTransform.ScaleYProperty, scaleAnim);
 
                 var shadowAnim = new System.Windows.Media.Animation.DoubleAnimation
                 {
-                    To = 8,
+                    To = 10,
                     Duration = TimeSpan.FromSeconds(0.25),
                     EasingFunction = new System.Windows.Media.Animation.QuadraticEase
                     { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
                 };
-                grid.Effect.BeginAnimation(
+                card.Effect.BeginAnimation(
                     System.Windows.Media.Effects.DropShadowEffect.BlurRadiusProperty, shadowAnim);
 
                 var opacityAnim = new System.Windows.Media.Animation.DoubleAnimation
@@ -754,18 +794,16 @@ public partial class DashboardPage : Page
                     To = 0,
                     Duration = TimeSpan.FromSeconds(0.2)
                 };
-                playOverlay.BeginAnimation(OpacityProperty, opacityAnim);
+                hoverOverlay.BeginAnimation(OpacityProperty, opacityAnim);
+                hoverBorder.BeginAnimation(OpacityProperty, opacityAnim);
             };
 
-            grid.MouseLeftButtonDown += (_, _) =>
+            card.MouseLeftButtonDown += (_, _) =>
             {
                 ShowPreviewThumbnailPopup(capturedPath, capturedPos);
             };
 
-            grid.Children.Add(border);
-            grid.Children.Add(posOverlay);
-            grid.Children.Add(playOverlay);
-            PreviewThumbnailsPanel.Children.Add(grid);
+            PreviewThumbnailsPanel.Children.Add(card);
         }
 
         PreviewThumbnailsSection.Visibility = paths.Count > 0
@@ -1981,7 +2019,7 @@ public partial class DashboardPage : Page
             ContinueWatchingPanel.Children.Add(border);
         }
 
-        Dispatcher.BeginInvoke(new Action(() => UpdateScrollButtons(ContinueWatchingScroll, CWScrollLeftBtn, CWScrollRightBtn)), System.Windows.Threading.DispatcherPriority.Background);
+        Dispatcher.BeginInvoke(new Action(() => UpdateMarginScrollButtons(ContinueWatchingPanel, CWScrollLeftBtn, CWScrollRightBtn)), System.Windows.Threading.DispatcherPriority.Background);
     }
 
     private void OnViewToggleClick(object sender, RoutedEventArgs e)
@@ -2005,46 +2043,57 @@ public partial class DashboardPage : Page
         }
     }
 
-    private void OnOuterPreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
+    private void ScrollMarginLeft(System.Windows.FrameworkElement panel, System.Windows.UIElement leftBtn, System.Windows.UIElement rightBtn, int amount = 260)
     {
-        if (e.Delta == 0) return;
-
-        if (sender is ScrollViewer sv)
-        {
-            sv.ScrollToVerticalOffset(sv.VerticalOffset + e.Delta);
-            e.Handled = true;
-        }
+        var parent = System.Windows.Media.VisualTreeHelper.GetParent(panel) as System.Windows.FrameworkElement;
+        if (parent == null) return;
+        var maxOffset = Math.Max(0, panel.ActualWidth - parent.ActualWidth);
+        var current = panel.Margin.Left;
+        var newLeft = Math.Min(0, Math.Max(-maxOffset, current + amount));
+        panel.Margin = new System.Windows.Thickness(newLeft, 0, 0, 0);
+        UpdateMarginScrollButtons(panel, leftBtn, rightBtn);
     }
 
-    private void UpdateScrollButtons(System.Windows.Controls.ScrollViewer sv, System.Windows.UIElement leftBtn, System.Windows.UIElement rightBtn)
+    private void ScrollMarginRight(System.Windows.FrameworkElement panel, System.Windows.UIElement leftBtn, System.Windows.UIElement rightBtn, int amount = 260)
     {
-        var canScroll = sv.ExtentWidth > sv.ViewportWidth;
-        leftBtn.Visibility = canScroll && sv.HorizontalOffset > 0 ? Visibility.Visible : Visibility.Collapsed;
-        rightBtn.Visibility = canScroll && sv.HorizontalOffset < sv.ExtentWidth - sv.ViewportWidth ? Visibility.Visible : Visibility.Collapsed;
+        var parent = System.Windows.Media.VisualTreeHelper.GetParent(panel) as System.Windows.FrameworkElement;
+        if (parent == null) return;
+        var maxOffset = Math.Max(0, panel.ActualWidth - parent.ActualWidth);
+        var current = panel.Margin.Left;
+        var newLeft = Math.Min(0, Math.Max(-maxOffset, current - amount));
+        panel.Margin = new System.Windows.Thickness(newLeft, 0, 0, 0);
+        UpdateMarginScrollButtons(panel, leftBtn, rightBtn);
+    }
+
+    private void UpdateMarginScrollButtons(System.Windows.FrameworkElement panel, System.Windows.UIElement leftBtn, System.Windows.UIElement rightBtn)
+    {
+        var parent = System.Windows.Media.VisualTreeHelper.GetParent(panel) as System.Windows.FrameworkElement;
+        if (parent == null) return;
+        var maxOffset = Math.Max(0, panel.ActualWidth - parent.ActualWidth);
+        var marginLeft = panel.Margin.Left;
+        var canScroll = maxOffset > 0;
+        leftBtn.Visibility = canScroll && marginLeft < 0 ? Visibility.Visible : Visibility.Collapsed;
+        rightBtn.Visibility = canScroll && marginLeft > -maxOffset ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void OnCWScrollLeft(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
-        ContinueWatchingScroll.ScrollToHorizontalOffset(Math.Max(0, ContinueWatchingScroll.HorizontalOffset - 260));
-        UpdateScrollButtons(ContinueWatchingScroll, CWScrollLeftBtn, CWScrollRightBtn);
+        ScrollMarginLeft(ContinueWatchingPanel, CWScrollLeftBtn, CWScrollRightBtn);
     }
 
     private void OnCWScrollRight(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
-        ContinueWatchingScroll.ScrollToHorizontalOffset(Math.Min(ContinueWatchingScroll.ExtentWidth - ContinueWatchingScroll.ViewportWidth, ContinueWatchingScroll.HorizontalOffset + 260));
-        UpdateScrollButtons(ContinueWatchingScroll, CWScrollLeftBtn, CWScrollRightBtn);
+        ScrollMarginRight(ContinueWatchingPanel, CWScrollLeftBtn, CWScrollRightBtn);
     }
 
     private void OnRecentScrollLeft(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
-        RecentScroll.ScrollToHorizontalOffset(Math.Max(0, RecentScroll.HorizontalOffset - 260));
-        UpdateScrollButtons(RecentScroll, RecentScrollLeftBtn, RecentScrollRightBtn);
+        ScrollMarginLeft(RecentPanel, RecentScrollLeftBtn, RecentScrollRightBtn);
     }
 
     private void OnRecentScrollRight(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
-        RecentScroll.ScrollToHorizontalOffset(Math.Min(RecentScroll.ExtentWidth - RecentScroll.ViewportWidth, RecentScroll.HorizontalOffset + 260));
-        UpdateScrollButtons(RecentScroll, RecentScrollLeftBtn, RecentScrollRightBtn);
+        ScrollMarginRight(RecentPanel, RecentScrollLeftBtn, RecentScrollRightBtn);
     }
 
     private void OnPageKeyDown(object sender, KeyEventArgs e)

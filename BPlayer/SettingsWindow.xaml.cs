@@ -327,6 +327,46 @@ public partial class SettingsWindow : Window
         }
     }
 
+    private void OnClearThumbnailCache(object sender, RoutedEventArgs e)
+    {
+        var result = MessageBox.Show(
+            "Delete all cached thumbnail images?\n\nThey will be regenerated on the next refresh.",
+            "Clear Thumbnail Cache",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (result != MessageBoxResult.Yes) return;
+
+        var cacheDir = System.IO.Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "BPlayer", "thumbcache");
+
+        if (!System.IO.Directory.Exists(cacheDir)) return;
+
+        int deleted = 0, skipped = 0;
+        foreach (var f in System.IO.Directory.GetFiles(cacheDir, "*.jpg"))
+        {
+            try
+            {
+                System.IO.File.Delete(f);
+                deleted++;
+            }
+            catch (System.IO.IOException)
+            {
+                skipped++;
+            }
+            catch (System.UnauthorizedAccessException)
+            {
+                skipped++;
+            }
+        }
+
+        ClearThumbCacheBtn.Content = skipped > 0
+            ? $"✅ Cleared {deleted} ({skipped} in use)"
+            : "✅ Cleared";
+        ClearThumbCacheBtn.IsEnabled = false;
+    }
+
     private void OnCancel(object sender, RoutedEventArgs e)
     {
         DialogResult = false;

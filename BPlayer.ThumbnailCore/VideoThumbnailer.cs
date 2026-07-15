@@ -419,7 +419,7 @@ public class PreviewFrameGenerator
     private const int CaptureW = 640;
     private const int CaptureH = 360;
 
-    public static List<string> GenerateFrames(string videoPath, string outputDir)
+    public static List<string> GenerateFrames(string videoPath, string outputDir, float[]? positions = null)
     {
         if (!File.Exists(videoPath))
             return new List<string>();
@@ -427,7 +427,7 @@ public class PreviewFrameGenerator
         Directory.CreateDirectory(outputDir);
 
         var results = new List<string>();
-        float[] positions = { 0.10f, 0.30f, 0.50f, 0.70f, 0.90f };
+        positions ??= new[] { 0.10f, 0.30f, 0.50f, 0.70f, 0.90f };
 
         IntPtr hwnd = IntPtr.Zero;
         IntPtr libvlc = IntPtr.Zero;

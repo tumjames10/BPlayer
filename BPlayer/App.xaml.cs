@@ -48,7 +48,6 @@ public partial class App : System.Windows.Application
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "BPlayer", "thumbcache");
             Directory.CreateDirectory(cacheDir);
-            ThumbnailService.EnsureCacheDir();
 
             Logger.Info($"AppData folder: {appData}");
             Logger.Info($"Cache folder: {cacheDir}");

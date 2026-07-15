@@ -21,18 +21,19 @@ public class GenericJsonProvider : IMetadataProvider
     {
         try
         {
-            var cleaned = CleanTitle(title);
             if (string.IsNullOrEmpty(_config.ApiUrl)) return null;
 
             var url = _config.ApiUrl
-                .Replace("{title}", Uri.EscapeDataString(cleaned))
+                .Replace("{title}", Uri.EscapeDataString(title))
                 .Replace("{key}", Uri.EscapeDataString(_config.ApiKey ?? ""));
 
             if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
                 uri.Scheme != "https")
                 return null;
 
+            Logger.Info($"GenericJsonProvider: requesting '{uri}'");
             var response = await _http.GetStringAsync(uri);
+            Logger.Info($"GenericJsonProvider: response length={response.Length} for '{title}'");
             using var doc = JsonDocument.Parse(response);
             var root = doc.RootElement;
 
@@ -149,5 +150,4 @@ public class GenericJsonProvider : IMetadataProvider
         return false;
     }
 
-    private static string CleanTitle(string raw) => TitleCleaner.Clean(raw);
 }

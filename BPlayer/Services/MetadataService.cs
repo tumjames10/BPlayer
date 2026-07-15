@@ -18,28 +18,47 @@ public class MetadataService
 
     public async Task<VideoMetadata?> FetchAsync(string title)
     {
+        Logger.Info($"MetadataService: fetching '{title}' from {_sources.Count} source(s)");
+
         foreach (var source in _sources)
         {
+            Logger.Info($"MetadataService: trying source '{source.Name}' for '{title}'");
             var provider = new GenericJsonProvider(_http, source);
             var result = await provider.FetchAsync(title);
 
+            // Fallback 1: try without trailing year
             if (result == null)
             {
-                var cleaned = CleanTitle(title);
-                var shortTitle = cleaned.Split(' ', '-', '_', '.')[0];
-                if (shortTitle.Length >= 2)
-                    result = await provider.FetchAsync(shortTitle);
+                var withoutYear = System.Text.RegularExpressions.Regex.Replace(title, @"\s+\d{4}$", "").Trim();
+                if (withoutYear != title && withoutYear.Length >= 2)
+                {
+                    Logger.Info($"MetadataService: retrying '{title}' without year -> '{withoutYear}'");
+                    result = await provider.FetchAsync(withoutYear);
+                }
+            }
+
+            // Fallback 2: try first word only (handles noisy filenames with release groups etc.)
+            if (result == null)
+            {
+                var firstWord = title.Split(' ')[0];
+                if (firstWord.Length >= 3 && firstWord != title)
+                {
+                    Logger.Info($"MetadataService: retrying '{title}' with first word -> '{firstWord}'");
+                    result = await provider.FetchAsync(firstWord);
+                }
             }
 
             if (result != null)
             {
-                Logger.Info($"Metadata found from '{source.Name}' for '{title}'");
+                Logger.Info($"MetadataService: FOUND from '{source.Name}' for '{title}' — PosterUrl='{result.PosterUrl}', Rating={result.Rating}, Year={result.Year}");
                 return result;
             }
+
+            Logger.Info($"MetadataService: no data from '{source.Name}' for '{title}'");
         }
 
+        Logger.Info($"MetadataService: all sources exhausted for '{title}' — returning null");
         return null;
     }
 
-    private static string CleanTitle(string raw) => TitleCleaner.Clean(raw);
 }

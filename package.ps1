@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 $SolutionDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $AppName = "BPlayer"
 $Publisher = "CN=BPlayer"
-$Version = "1.0.0.0"
+$Version = "1.0.1.0"
 
 $PublishDir = "$SolutionDir\BPlayer\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish"
 $PackageDir = "$SolutionDir\BPlayer.Package"

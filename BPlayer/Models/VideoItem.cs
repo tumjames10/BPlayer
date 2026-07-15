@@ -38,16 +38,20 @@ public class VideoItem : INotifyPropertyChanged
     public string? ThumbnailUrl
     {
         get => _thumbnailUrl;
-        set { _thumbnailUrl = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasThumbnail)); }
+        set { _thumbnailUrl = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasThumbnail)); OnPropertyChanged(nameof(HasFlipImages)); OnPropertyChanged(nameof(FlipImageUrl)); }
     }
 
     public string? BannerUrl
     {
         get => _bannerUrl;
-        set { _bannerUrl = value; OnPropertyChanged(); }
+        set { _bannerUrl = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasFlipImages)); OnPropertyChanged(nameof(FlipImageUrl)); }
     }
 
     public bool HasThumbnail => !string.IsNullOrEmpty(ThumbnailUrl);
+
+    public bool HasFlipImages => !string.IsNullOrEmpty(ThumbnailUrl) && !string.IsNullOrEmpty(BannerUrl) && ThumbnailUrl != BannerUrl;
+
+    public string? FlipImageUrl => HasFlipImages ? BannerUrl : null;
 
     public double Rating
     {

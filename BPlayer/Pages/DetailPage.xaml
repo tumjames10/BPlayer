@@ -113,6 +113,9 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
                     <!-- Back -->
@@ -214,14 +217,34 @@
                                    Foreground="#e94560" VerticalAlignment="Center" />
                     </Border>
 
+                    <!-- Next button -->
+                    <Border Grid.Column="10" x:Name="NextBtn" Background="#1e1e30" CornerRadius="6"
+                            Padding="8,6" Cursor="Hand" Margin="0,0,4,0" Visibility="Collapsed"
+                            MouseLeftButtonDown="OnNextClick">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="NEXT" FontSize="10" FontWeight="Bold"
+                                       Foreground="#22c55e" VerticalAlignment="Center" />
+                            <TextBlock Text=" ▶" FontSize="10" FontWeight="Bold"
+                                       Foreground="#22c55e" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Auto-play toggle -->
+                    <Border Grid.Column="11" x:Name="AutoPlayBtn" Background="#1e1e30" CornerRadius="6"
+                            Padding="6,6" Cursor="Hand" Margin="0,0,8,0" Visibility="Collapsed"
+                            MouseLeftButtonDown="OnAutoPlayToggleClick">
+                        <TextBlock x:Name="AutoPlayLabel" Text="▶▶" FontSize="11" FontWeight="Bold"
+                                   Foreground="#22c55e" VerticalAlignment="Center" />
+                    </Border>
+
                     <!-- Rating -->
-                    <TextBlock Grid.Column="10" x:Name="RatingText"
+                    <TextBlock Grid.Column="12" x:Name="RatingText"
                                Foreground="#e94560" FontSize="13"
                                FontWeight="SemiBold"
                                VerticalAlignment="Center" />
 
                     <!-- Fullscreen toggle -->
-                    <Border Grid.Column="11" Background="#1e1e30" CornerRadius="6"
+                    <Border Grid.Column="13" Background="#1e1e30" CornerRadius="6"
                             Padding="8,6" Cursor="Hand" Margin="8,0,0,0"
                             MouseLeftButtonDown="OnFullscreenBtnClick">
                         <TextBlock x:Name="FullscreenBtn" Text="⛶" FontSize="13"

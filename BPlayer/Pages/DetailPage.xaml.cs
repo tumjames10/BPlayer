@@ -65,12 +65,22 @@ public partial class DetailPage : Page
         _pointA = null;
         _pointB = null;
         _isLoopingAB = false;
+
+        bool hasNext = _playlistVideos != null && _playlistIndex + 1 < _playlistVideos.Count;
+        if (NextBtn != null) NextBtn.Visibility = hasNext ? Visibility.Visible : Visibility.Collapsed;
+        if (AutoPlayBtn != null)
+        {
+            AutoPlayBtn.Visibility = _playlistVideos != null ? Visibility.Visible : Visibility.Collapsed;
+            UpdateAutoPlayUI();
+        }
+
         Loaded += OnLoaded;
         Unloaded += (_, _) => Cleanup();
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
+        _disposed = false;
         Dispatcher.BeginInvoke(new Action(() =>
         {
             try
@@ -218,6 +228,9 @@ public partial class DetailPage : Page
             Logger.Info("Keyboard hook removed");
         }
         _updateTimer.Stop();
+        _ready = false;
+        _isPlaying = false;
+        VlcPlayer.MediaPlayer = null;
         _media?.Dispose();
         _vlcPlayer?.Dispose();
         _libVlc?.Dispose();
@@ -437,7 +450,9 @@ public partial class DetailPage : Page
 
     private bool IsPlayerWindowActive()
     {
-        var hwnd = new WindowInteropHelper(Window.GetWindow(this)).Handle;
+        var win = Window.GetWindow(this);
+        if (win == null) return false;
+        var hwnd = new WindowInteropHelper(win).Handle;
         return GetForegroundWindow() == hwnd;
     }
 
@@ -498,6 +513,32 @@ public partial class DetailPage : Page
         {
             Cleanup();
             NavigationService?.Navigate(new DetailPage(_playlistVideos[_playlistIndex + 1], _playlistVideos, _playlistIndex + 1));
+        }
+    }
+
+    private void OnNextClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        PlayNextInPlaylist();
+    }
+
+    private void OnAutoPlayToggleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        _autoPlayNext = !_autoPlayNext;
+        UpdateAutoPlayUI();
+    }
+
+    private void UpdateAutoPlayUI()
+    {
+        if (AutoPlayBtn == null) return;
+        if (_autoPlayNext)
+        {
+            AutoPlayLabel.Text = "▶▶";
+            AutoPlayLabel.Foreground = System.Windows.Media.Brushes.LimeGreen;
+        }
+        else
+        {
+            AutoPlayLabel.Text = "▶▶";
+            AutoPlayLabel.Foreground = System.Windows.Media.Brushes.Gray;
         }
     }
 
