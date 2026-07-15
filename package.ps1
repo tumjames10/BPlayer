@@ -30,13 +30,12 @@ $LayoutDir = "$OutputDir\layout"
 if (Test-Path $LayoutDir) { Remove-Item -Path $LayoutDir -Recurse -Force }
 New-Item -ItemType Directory -Path $LayoutDir -Force | Out-Null
 
-# Copy published app files
-Get-ChildItem -Path $PublishDir -File | Copy-Item -Destination $LayoutDir
-# Copy native LibVLC directory (x64 only)
+# Copy everything from publish (files + subdirectories, excluding libvlc which is handled separately)
+Get-ChildItem -Path $PublishDir -Exclude "libvlc" | Copy-Item -Destination $LayoutDir -Recurse -Force
+# Copy native LibVLC directory (x64 only, including plugins/lua/hrtfs)
 $vlcSrc = "$PublishDir\libvlc"
 if (Test-Path $vlcSrc) {
     Copy-Item -Path "$vlcSrc\win-x64" -Destination "$LayoutDir\libvlc\win-x64" -Recurse -Force
-    # Include top-level files (libvlc.dll, libvlccore.dll are inside win-x64)
 }
 
 # Copy assets

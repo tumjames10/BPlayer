@@ -59,7 +59,12 @@ public partial class App : System.Windows.Application
 
         try
         {
-            LibVLCSharp.Shared.Core.Initialize();
+            var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            var libvlcPath = Path.Combine(baseDir, "libvlc", "win-x64");
+            if (Directory.Exists(libvlcPath))
+                LibVLCSharp.Shared.Core.Initialize(libvlcPath);
+            else
+                LibVLCSharp.Shared.Core.Initialize();
         }
         catch (Exception ex)
         {
