@@ -460,21 +460,33 @@ public partial class DashboardPage : Page
             Dark = System.Windows.Media.Color.FromRgb(0x0a, 0x0a, 0x0f)
         };
 
-        // Set initial gradient from placeholder color
-        var pc = new System.Windows.Media.BrushConverter();
-        if (pc.ConvertFrom(video.PlaceholderColor) is System.Windows.Media.Color phColor)
+        // Set blurred poster as background (fallback to gradient)
+        var posterUrl = video.EffectivePosterUrl;
+        if (!string.IsNullOrEmpty(posterUrl))
         {
-            var initPalette = new Palette
+            try
             {
-                Background = phColor,
-                Accent = phColor,
-                Dark = System.Windows.Media.Color.FromArgb(255, (byte)(phColor.R / 3), (byte)(phColor.G / 3), (byte)(phColor.B / 3))
-            };
-            PreviewGradient.Fill = ColorExtractor.CreateGradientBrush(initPalette);
+                var img = new System.Windows.Media.Imaging.BitmapImage(new System.Uri(posterUrl));
+                var brush = new System.Windows.Media.ImageBrush(img)
+                {
+                    Stretch = System.Windows.Media.Stretch.UniformToFill,
+                    AlignmentX = System.Windows.Media.AlignmentX.Center,
+                    AlignmentY = System.Windows.Media.AlignmentY.Center
+                };
+                var blur = new System.Windows.Media.Effects.BlurEffect { Radius = 20 };
+                PreviewGradient.Fill = brush;
+                PreviewGradient.Effect = blur;
+            }
+            catch
+            {
+                PreviewGradient.Fill = ColorExtractor.CreateGradientBrush(fallbackPalette);
+                PreviewGradient.Effect = null;
+            }
         }
         else
         {
             PreviewGradient.Fill = ColorExtractor.CreateGradientBrush(fallbackPalette);
+            PreviewGradient.Effect = null;
         }
 
         PreviewThumb.Source = !string.IsNullOrEmpty(video.EffectivePosterUrl)
@@ -530,18 +542,6 @@ public partial class DashboardPage : Page
         };
         PreviewPanel.BeginAnimation(OpacityProperty, fadeIn);
         translate.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty, slideIn);
-
-        // Extract dominant colors from thumbnail (async)
-        if (!string.IsNullOrEmpty(video.EffectivePosterUrl))
-        {
-            var url = video.EffectivePosterUrl;
-            _ = Task.Run(() =>
-            {
-                var palette = ColorExtractor.ExtractFromImage(url, fallbackPalette);
-                var brush = ColorExtractor.CreateGradientBrush(palette);
-                Dispatcher.Invoke(() => PreviewGradient.Fill = brush);
-            });
-        }
 
         // Show cached media info or load it
         if (video.HasMediaInfo)

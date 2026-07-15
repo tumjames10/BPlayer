@@ -836,7 +836,7 @@
                 Visibility="Collapsed">
             <Grid>
                 <Rectangle x:Name="PreviewGradient" />
-                <Rectangle Fill="#18181a" Opacity="0.25" />
+                <Rectangle Fill="#0a0a0f" Opacity="0.55" />
 
                 <!-- Scrollable info content -->
                 <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="24,16"
