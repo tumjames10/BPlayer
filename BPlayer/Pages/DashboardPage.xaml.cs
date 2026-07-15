@@ -185,19 +185,23 @@ public partial class DashboardPage : Page
             RecentSection.Visibility = Visibility.Visible;
             foreach (var video in recent)
             {
-                var border = new Border
+                var card = new Border
                 {
-                    Width = 240,
-                    Height = 360,
-                    Margin = new Thickness(0, 0, 12, 0),
-                    CornerRadius = new CornerRadius(12),
+                    Width = 180,
+                    Height = 270,
+                    Margin = new Thickness(0, 0, 10, 0),
+                    CornerRadius = new CornerRadius(10),
                     ClipToBounds = true,
                     Cursor = Cursors.Hand,
                     Tag = video.FilePath,
                     Background = new System.Windows.Media.SolidColorBrush(
                         (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(video.PlaceholderColor))
                 };
-                border.MouseLeftButtonDown += (s, _) =>
+                card.Effect = new System.Windows.Media.Effects.DropShadowEffect
+                {
+                    BlurRadius = 8, Opacity = 0.3, ShadowDepth = 3, Color = System.Windows.Media.Colors.Black
+                };
+                card.MouseLeftButtonDown += (s, _) =>
                 {
                     if (s is Border b && b.Tag is string path)
                     {
@@ -215,10 +219,10 @@ public partial class DashboardPage : Page
                 var initial = new TextBlock
                 {
                     Text = video.Initial,
-                    FontSize = 56,
+                    FontSize = 42,
                     FontWeight = FontWeights.Light,
                     Foreground = System.Windows.Media.Brushes.White,
-                    Opacity = 0.35,
+                    Opacity = 0.3,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center
                 };
@@ -237,10 +241,10 @@ public partial class DashboardPage : Page
                 var overlay = new Border
                 {
                     VerticalAlignment = VerticalAlignment.Bottom,
-                    Height = 65,
+                    Height = 50,
                     Background = new System.Windows.Media.LinearGradientBrush(
                         System.Windows.Media.Color.FromArgb(0, 0, 0, 0),
-                        System.Windows.Media.Color.FromArgb(0xDD, 0, 0, 0),
+                        System.Windows.Media.Color.FromArgb(200, 0, 0, 0),
                         0)
                 };
                 var titleText = new TextBlock
@@ -248,7 +252,7 @@ public partial class DashboardPage : Page
                     Text = video.Title,
                     Foreground = System.Windows.Media.Brushes.White,
                     FontSize = 13,
-                    FontWeight = FontWeights.SemiBold,
+                    FontWeight = FontWeights.Bold,
                     TextTrimming = System.Windows.TextTrimming.CharacterEllipsis,
                     Margin = new Thickness(10, 0, 10, 8),
                     VerticalAlignment = VerticalAlignment.Bottom
@@ -256,8 +260,26 @@ public partial class DashboardPage : Page
                 overlay.Child = titleText;
                 grid.Children.Add(overlay);
 
-                border.Child = grid;
-                RecentPanel.Children.Add(border);
+                // NEW badge
+                var newBadge = new Border
+                {
+                    Background = new System.Windows.Media.SolidColorBrush(
+                        System.Windows.Media.Color.FromArgb(220, 233, 69, 96)),
+                    CornerRadius = new CornerRadius(4),
+                    Padding = new System.Windows.Thickness(6, 2, 6, 2),
+                    Margin = new System.Windows.Thickness(0, 6, 0, 0),
+                    HorizontalAlignment = HorizontalAlignment.Right,
+                    VerticalAlignment = VerticalAlignment.Top
+                };
+                newBadge.Child = new TextBlock
+                {
+                    Text = "NEW", FontSize = 9, FontWeight = FontWeights.Bold,
+                    Foreground = System.Windows.Media.Brushes.White
+                };
+                grid.Children.Add(newBadge);
+
+                card.Child = grid;
+                RecentPanel.Children.Add(card);
             }
 
             Dispatcher.BeginInvoke(new Action(() => UpdateMarginScrollButtons(RecentPanel, RecentScrollLeftBtn, RecentScrollRightBtn)), System.Windows.Threading.DispatcherPriority.Background);
@@ -1922,19 +1944,23 @@ public partial class DashboardPage : Page
         ContinueWatchingSection.Visibility = Visibility.Visible;
         foreach (var video in resumeVideos)
         {
-            var border = new Border
+            var card = new Border
             {
-                Width = 240,
-                Height = 360,
-                Margin = new Thickness(0, 0, 12, 0),
-                CornerRadius = new CornerRadius(12),
+                Width = 180,
+                Height = 270,
+                Margin = new Thickness(0, 0, 10, 0),
+                CornerRadius = new CornerRadius(10),
                 ClipToBounds = true,
                 Cursor = Cursors.Hand,
                 Tag = video.FilePath,
                 Background = new System.Windows.Media.SolidColorBrush(
                     (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(video.PlaceholderColor))
             };
-            border.MouseLeftButtonDown += (s, _) =>
+            card.Effect = new System.Windows.Media.Effects.DropShadowEffect
+            {
+                BlurRadius = 8, Opacity = 0.3, ShadowDepth = 3, Color = System.Windows.Media.Colors.Black
+            };
+            card.MouseLeftButtonDown += (s, _) =>
             {
                 if (s is Border b && b.Tag is string path)
                 {
@@ -1952,10 +1978,10 @@ public partial class DashboardPage : Page
             var initial = new TextBlock
             {
                 Text = video.Initial,
-                FontSize = 56,
+                FontSize = 42,
                 FontWeight = FontWeights.Light,
                 Foreground = System.Windows.Media.Brushes.White,
-                Opacity = 0.35,
+                Opacity = 0.3,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             };
@@ -1973,10 +1999,10 @@ public partial class DashboardPage : Page
             var overlay = new Border
             {
                 VerticalAlignment = VerticalAlignment.Bottom,
-                Height = 65,
+                Height = 50,
                 Background = new System.Windows.Media.LinearGradientBrush(
                     System.Windows.Media.Color.FromArgb(0, 0, 0, 0),
-                    System.Windows.Media.Color.FromArgb(0xDD, 0, 0, 0),
+                    System.Windows.Media.Color.FromArgb(200, 0, 0, 0),
                     0)
             };
             var titleText = new TextBlock
@@ -1984,7 +2010,7 @@ public partial class DashboardPage : Page
                 Text = video.Title,
                 Foreground = System.Windows.Media.Brushes.White,
                 FontSize = 13,
-                FontWeight = FontWeights.SemiBold,
+                FontWeight = FontWeights.Bold,
                 TextTrimming = System.Windows.TextTrimming.CharacterEllipsis,
                 Margin = new Thickness(10, 0, 10, 8),
                 VerticalAlignment = VerticalAlignment.Bottom
@@ -1992,8 +2018,38 @@ public partial class DashboardPage : Page
             overlay.Child = titleText;
             grid.Children.Add(overlay);
 
-            border.Child = grid;
-            ContinueWatchingPanel.Children.Add(border);
+            // Play indicator badge
+            var playBadge = new Border
+            {
+                Width = 28, Height = 28, CornerRadius = new CornerRadius(14),
+                Background = new System.Windows.Media.SolidColorBrush(
+                    System.Windows.Media.Color.FromArgb(200, 233, 69, 96)),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                Opacity = 0.85
+            };
+            playBadge.Child = new TextBlock
+            {
+                Text = "\u25b6", FontSize = 12, Foreground = System.Windows.Media.Brushes.White,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            grid.Children.Add(playBadge);
+
+            // Accent progress bar at bottom
+            var progressBar = new Border
+            {
+                Width = 45, Height = 3,
+                Background = new System.Windows.Media.SolidColorBrush(
+                    System.Windows.Media.Color.FromRgb(0xe9, 0x45, 0x60)),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Bottom,
+                Margin = new Thickness(0, 0, 0, 0)
+            };
+            grid.Children.Add(progressBar);
+
+            card.Child = grid;
+            ContinueWatchingPanel.Children.Add(card);
         }
 
         Dispatcher.BeginInvoke(new Action(() => UpdateMarginScrollButtons(ContinueWatchingPanel, CWScrollLeftBtn, CWScrollRightBtn)), System.Windows.Threading.DispatcherPriority.Background);
