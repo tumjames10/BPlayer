@@ -1985,6 +1985,15 @@ public partial class DashboardPage : Page
                 SetupFileWatchers(config.VideoSourcePaths);
             _collections = config.Collections ?? new();
             RefreshCollectionsSidebar();
+
+            // Enrich videos in background with progress bar
+            if (_allVideos.Count > 0 && (config.EnableOnlineMetadata || config.EnableVideoThumbnails))
+            {
+                _enricherService = new MetadataEnricherService(new HttpClient { Timeout = TimeSpan.FromSeconds(10) }, config.MetadataSources);
+                _enricherService.ProgressChanged += pct => Dispatcher.Invoke(() => UpdateThumbnailProgress(pct));
+                ShowThumbnailProgress();
+                _ = _enricherService.EnrichAsync(_allVideos, config.EnableOnlineMetadata, config.EnableVideoThumbnails);
+            }
         }
         catch (Exception ex) { Logger.Warn($"Failed to load settings: {ex.Message}"); }
     }

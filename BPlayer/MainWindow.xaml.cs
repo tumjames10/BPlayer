@@ -31,8 +31,6 @@ public partial class MainWindow : Window
         // Pre-load cached thumbnails from disk so the UI doesn't show blank placeholders
         enricher.ThumbnailService.PreloadCachedThumbnails(videos);
 
-        _ = enricher.EnrichAsync(_allVideos, config.EnableOnlineMetadata, config.EnableVideoThumbnails);
-
         var dashboard = new DashboardPage(_allVideos, config.Playlists ?? new());
         MainFrame.Navigate(dashboard);
     }
