@@ -17,6 +17,8 @@ public class MetadataEnricherService
     private readonly ThumbnailService _thumbnailService;
     private readonly PlaybackStateService _playbackState = PlaybackStateService.Instance;
 
+    public event Action<double>? ProgressChanged;
+
     public MetadataEnricherService(HttpClient http, List<MetadataSource> sources)
     {
         var metadataService = new MetadataService(http, sources);
@@ -75,6 +77,10 @@ public class MetadataEnricherService
     public async Task EnrichAsync(ObservableCollection<VideoItem> videos, bool enableOnline, bool enableThumbnails)
     {
         var snapshot = videos.ToList();
+        var total = snapshot.Count;
+        if (total == 0) return;
+
+        void Report(double pct) => ProgressChanged?.Invoke(pct);
 
         // Phase 0: Restore cached metadata from disk — poster URL takes priority over local thumbnail
         foreach (var video in snapshot)
@@ -95,6 +101,7 @@ public class MetadataEnricherService
         // Phase 1: Online metadata — set poster URL immediately for display
         // Posters always take priority over generated thumbnails
         int onlineOk = 0, onlineFail = 0;
+        int p1Done = 0;
         foreach (var video in snapshot)
         {
             bool hasPoster = !string.IsNullOrEmpty(video.BannerUrl) && video.BannerUrl.StartsWith("http");
@@ -102,7 +109,10 @@ public class MetadataEnricherService
 
             // Only skip if we already have a poster AND year/rating
             if (hasPoster && hasYearOrRating)
+            {
+                Report(0.4 * (double)(++p1Done) / total);
                 continue;
+            }
 
             var filenameYear = FilenameUtils.ExtractYearFromFilename(video.Title);
 
@@ -138,6 +148,8 @@ public class MetadataEnricherService
 
             if (video.Year == 0)
                 video.Year = filenameYear;
+
+            Report(0.4 * (double)(++p1Done) / total);
         }
 
         Logger.Info($"Online metadata: {onlineOk} OK, {onlineFail} no data");
@@ -147,6 +159,7 @@ public class MetadataEnricherService
         if (posterBatch.Count > 0)
         {
             var throttle = new SemaphoreSlim(6, 6);
+            var p2Done = 0;
             var tasks = posterBatch.Select(async video =>
             {
                 await throttle.WaitAsync();
@@ -159,9 +172,14 @@ public class MetadataEnricherService
                 finally
                 {
                     throttle.Release();
+                    Report(0.4 + 0.3 * (double)(++p2Done) / posterBatch.Count);
                 }
             });
             await Task.WhenAll(tasks);
+        }
+        else
+        {
+            Report(0.7);
         }
 
         // Phase 3: VLC thumbnails for videos that still have no image at all
@@ -175,6 +193,7 @@ public class MetadataEnricherService
             {
                 Logger.Info($"Generating {vlcQueue.Count} VLC thumbnails");
                 var throttle = new SemaphoreSlim(3, 3);
+                var p3Done = 0;
                 var tasks = vlcQueue.Select(async video =>
                 {
                     await throttle.WaitAsync();
@@ -187,6 +206,7 @@ public class MetadataEnricherService
                     finally
                     {
                         throttle.Release();
+                        Report(0.7 + 0.3 * (double)(++p3Done) / vlcQueue.Count);
                     }
                 });
                 await Task.WhenAll(tasks);
@@ -200,5 +220,7 @@ public class MetadataEnricherService
         // Persist metacache
         foreach (var v in snapshot)
             SaveMetaCache(v);
+
+        Report(1.0);
     }
 }

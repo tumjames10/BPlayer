@@ -187,11 +187,12 @@
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
         <!-- Sidebar -->
-        <Border Grid.Column="0" Grid.RowSpan="2" Width="220" Background="{DynamicResource BgSurfaceBrush}" Padding="0,0,0,0">
+        <Border Grid.Column="0" Grid.RowSpan="3" Width="220" Background="{DynamicResource BgSurfaceBrush}" Padding="0,0,0,0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -483,8 +484,16 @@
             </Grid>
         </Border>
 
+        <!-- Thumbnail/Metadata progress bar -->
+        <Border Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="1" x:Name="ThumbnailProgressBar"
+                Height="3" Background="{DynamicResource BgCardBrush}"
+                Visibility="Collapsed" VerticalAlignment="Top">
+            <Border x:Name="ThumbnailProgressFill" Width="0" Background="{DynamicResource AccentBrush}"
+                    HorizontalAlignment="Left" />
+        </Border>
+
         <!-- Main content -->
-        <ScrollViewer Grid.Column="1" Grid.Row="1" VerticalScrollBarVisibility="Auto"
+        <ScrollViewer Grid.Column="1" Grid.Row="2" VerticalScrollBarVisibility="Auto"
                       Background="{DynamicResource BgDarkBrush}"
                       x:Name="OuterScrollViewer" CanContentScroll="False">
         <Grid>
@@ -832,7 +841,7 @@
         </ScrollViewer>
 
         <!-- Right: preview panel -->
-        <Border Grid.Column="2" Grid.Row="1" x:Name="PreviewPanel"
+        <Border Grid.Column="2" Grid.Row="2" x:Name="PreviewPanel"
                 Visibility="Collapsed">
             <Grid>
                 <Rectangle x:Name="PreviewGradient" />

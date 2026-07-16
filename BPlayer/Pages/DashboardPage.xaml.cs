@@ -1532,6 +1532,8 @@ public partial class DashboardPage : Page
                     if (config.EnableOnlineMetadata || config.EnableVideoThumbnails)
                     {
                         _enricherService = new MetadataEnricherService(new HttpClient { Timeout = TimeSpan.FromSeconds(10) }, config.MetadataSources);
+                        _enricherService.ProgressChanged += pct => Dispatcher.Invoke(() => UpdateThumbnailProgress(pct));
+                        ShowThumbnailProgress();
                         _ = _enricherService.EnrichAsync(_allVideos, config.EnableOnlineMetadata, config.EnableVideoThumbnails);
                     }
 
@@ -1620,6 +1622,8 @@ public partial class DashboardPage : Page
             {
                 var newCollection = new ObservableCollection<VideoItem>(newVideos);
                 _enricherService = new MetadataEnricherService(new HttpClient { Timeout = TimeSpan.FromSeconds(10) }, config.MetadataSources);
+                _enricherService.ProgressChanged += pct => Dispatcher.Invoke(() => UpdateThumbnailProgress(pct));
+                ShowThumbnailProgress();
                 _ = _enricherService.EnrichAsync(newCollection, config.EnableOnlineMetadata, config.EnableVideoThumbnails);
             }
 
@@ -1784,6 +1788,30 @@ public partial class DashboardPage : Page
     {
         ProgressBar.Visibility = Visibility.Collapsed;
         ProgressFill.Width = 0;
+    }
+
+    private void ShowThumbnailProgress()
+    {
+        ThumbnailProgressBar.Visibility = Visibility.Visible;
+        ThumbnailProgressFill.Width = 0;
+    }
+
+    private void HideThumbnailProgress()
+    {
+        ThumbnailProgressBar.Visibility = Visibility.Collapsed;
+        ThumbnailProgressFill.Width = 0;
+    }
+
+    private void UpdateThumbnailProgress(double value)
+    {
+        if (value >= 1.0)
+        {
+            HideThumbnailProgress();
+            return;
+        }
+        var parentWidth = ThumbnailProgressBar.ActualWidth;
+        if (parentWidth > 0)
+            ThumbnailProgressFill.Width = parentWidth * value;
     }
 
     private void SetupFileWatchers(List<string> paths)
