@@ -14,6 +14,7 @@ public class VideoScannerService
 
     public Task<List<VideoItem>> ScanDirectoriesAsync(IEnumerable<string> paths)
     {
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var videos = new List<VideoItem>();
 
         foreach (var dir in paths)
@@ -28,7 +29,7 @@ public class VideoScannerService
                 foreach (var file in Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
                 {
                     var ext = Path.GetExtension(file);
-                    if (!string.IsNullOrEmpty(ext) && SupportedExtensions.Contains(ext))
+                    if (!string.IsNullOrEmpty(ext) && SupportedExtensions.Contains(ext) && seen.Add(file))
                     {
                         videos.Add(new VideoItem
                         {
