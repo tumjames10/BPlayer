@@ -48,17 +48,33 @@ public partial class DashboardPage : Page
 
     public DashboardPage(ObservableCollection<VideoItem> allVideos, List<Playlist> playlists)
     {
-        _allVideos = allVideos;
-        _playlists = playlists;
-        InitializeComponent();
-        _spinnerAnim = TryFindResource("SpinnerAnim") as Storyboard;
-        PlaylistList.ItemsSource = _playlists;
-        _ = RefreshFolderListAsync();
-        ShowAllVideos();
-        allVideos.CollectionChanged += (_, _) => UpdateContinueWatching();
-        Unloaded += (_, _) => { StopFileWatchers(); _mediaInfoService.Dispose(); };
-        _ = InitFromConfigAsync();
-        PopulateThemeSwitcher();
+        try
+        {
+            _allVideos = allVideos;
+            _playlists = playlists;
+            InitializeComponent();
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"DashboardPage InitializeComponent failed: {ex}");
+            throw;
+        }
+
+        try
+        {
+            _spinnerAnim = TryFindResource("SpinnerAnim") as Storyboard;
+            PlaylistList.ItemsSource = _playlists;
+            _ = RefreshFolderListAsync();
+            ShowAllVideos();
+            allVideos.CollectionChanged += (_, _) => UpdateContinueWatching();
+            Unloaded += (_, _) => { StopFileWatchers(); _mediaInfoService.Dispose(); };
+            _ = InitFromConfigAsync();
+            PopulateThemeSwitcher();
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"DashboardPage init failed: {ex}");
+        }
     }
 
     private void ShowLoadingOverlay(string title, string subtitle)

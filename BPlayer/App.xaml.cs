@@ -8,9 +8,14 @@ public partial class App : System.Windows.Application
 {
     private void ReportStartupError(string context, string message)
     {
-        try { Logger.Error($"{context}: {message}"); } catch { }
-        MessageBox.Show($"{context}:\n{message}\n\nThe application may not work correctly.",
-            "Startup Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+        ReportStartupError(context, message, "Warning");
+    }
+
+    private void ReportStartupError(string context, string message, string caption)
+    {
+        var full = $"{context}:\n{message}\n\nThe application may not work correctly.";
+        try { Logger.Error(full); } catch { }
+        try { MessageBox.Show(full, caption, MessageBoxButton.OK, MessageBoxImage.Warning); } catch { }
     }
 
     private void SafeLoggerInit()
@@ -24,27 +29,34 @@ public partial class App : System.Windows.Application
         catch { }
     }
 
-    protected override void OnStartup(System.Windows.StartupEventArgs e)
+    private string GetSafeAppDataPath()
     {
-        SafeLoggerInit();
-
-        DispatcherUnhandledException += (_, args) =>
+        try
         {
-            try { Logger.Error($"Unhandled: {args.Exception.Message}"); } catch { }
-            MessageBox.Show($"An unexpected error occurred:\n{args.Exception.Message}",
-                "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            args.Handled = true;
-        };
-
-        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+            return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BPlayer");
+        }
+        catch
         {
-            var ex = args.ExceptionObject as Exception;
-            var msg = ex?.Message ?? "Unknown fatal error";
-            try { Logger.Error($"Fatal: {msg}"); } catch { }
-            MessageBox.Show($"A fatal error occurred:\n{msg}",
-                "Fatal Error", MessageBoxButton.OK, MessageBoxImage.Error);
-        };
+            var fallback = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data");
+            try { Directory.CreateDirectory(fallback); } catch { }
+            return fallback;
+        }
+    }
 
+    private void WriteCrashMarker(string message)
+    {
+        try
+        {
+            var dir = GetSafeAppDataPath();
+            File.WriteAllText(Path.Combine(dir, "crash_marker.txt"),
+                $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}");
+        }
+        catch { }
+    }
+
+    private bool EnsureThemeApplied()
+    {
         try
         {
             Logger.Debug("OnStartup: initializing themes synchronously");
@@ -52,13 +64,18 @@ public partial class App : System.Windows.Application
             var savedTheme = ThemeService.LoadSavedTheme();
             ThemeService.ApplyTheme(savedTheme);
             Logger.Info($"App started with theme: {savedTheme}");
+            return true;
         }
         catch (Exception ex)
         {
             ReportStartupError("Theme initialization", ex.Message);
-            try { ThemeService.ApplyTheme("Dark"); } catch { }
+            try { ThemeService.ApplyTheme("Dark"); return true; } catch { }
         }
+        return false;
+    }
 
+    private void EnsureDirectoriesExist()
+    {
         try
         {
             var appData = Path.Combine(
@@ -77,7 +94,10 @@ public partial class App : System.Windows.Application
         {
             ReportStartupError("Directory setup", ex.Message);
         }
+    }
 
+    private void InitializeVlc()
+    {
         try
         {
             var baseDir = AppDomain.CurrentDomain.BaseDirectory;
@@ -91,6 +111,66 @@ public partial class App : System.Windows.Application
         {
             ReportStartupError("VLC initialization", ex.Message);
         }
+    }
+
+    private void CreateMainWindowSafely()
+    {
+        try
+        {
+            Logger.Debug("Creating MainWindow");
+            var mainWindow = new MainWindow();
+            mainWindow.Show();
+            Logger.Info("MainWindow created successfully");
+        }
+        catch (Exception ex)
+        {
+            WriteCrashMarker($"Window creation failed: {ex.GetType().Name}: {ex.Message}");
+            ReportStartupError("Window creation", ex.ToString(), "Fatal Error");
+            Shutdown(-1);
+        }
+    }
+
+    protected override void OnStartup(System.Windows.StartupEventArgs e)
+    {
+        SafeLoggerInit();
+        WriteCrashMarker("Starting up");
+
+        DispatcherUnhandledException += (_, args) =>
+        {
+            WriteCrashMarker($"Unhandled dispatcher: {args.Exception.GetType().Name}: {args.Exception.Message}");
+            try { Logger.Error($"Unhandled: {args.Exception}"); } catch { }
+            try
+            {
+                MessageBox.Show($"An unexpected error occurred:\n{args.Exception.Message}",
+                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            catch { }
+            args.Handled = true;
+        };
+
+        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+        {
+            var ex = args.ExceptionObject as Exception;
+            var msg = ex?.ToString() ?? "Unknown fatal error";
+            WriteCrashMarker($"Fatal: {msg}");
+            try { Logger.Error($"Fatal: {msg}"); } catch { }
+            try
+            {
+                MessageBox.Show($"A fatal error occurred:\n{ex?.Message ?? "Unknown"}",
+                    "Fatal Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            catch { }
+        };
+
+        Logger.Debug($"OnStartup: BaseDir={AppDomain.CurrentDomain.BaseDirectory}");
+        Logger.Debug($"OnStartup: OSVersion={Environment.OSVersion}");
+
+        EnsureThemeApplied();
+        EnsureDirectoriesExist();
+        InitializeVlc();
+
+        Logger.Debug("OnStartup: creating window");
+        CreateMainWindowSafely();
 
         base.OnStartup(e);
     }

@@ -45,8 +45,10 @@ public static class ThemeService
             theme = GetTheme(DefaultTheme);
             if (theme == null)
             {
-                Logger.Error("No themes available, cannot apply");
-                return;
+                Logger.Error("No themes available, using hardcoded fallback");
+                var themes = ThemesConfig.GetDefaultThemes();
+                _themes = themes;
+                theme = themes[0];
             }
             themeName = DefaultTheme;
         }
