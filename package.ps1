@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 $SolutionDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $AppName = "BPlayer"
 $Publisher = "CN=BPlayer"
-$Version = "1.0.1.0"
+$Version = "1.0.2.0"
 
 $PublishDir = "$SolutionDir\BPlayer\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish"
 $PackageDir = "$SolutionDir\BPlayer.Package"
@@ -16,6 +16,7 @@ $AssetsDir = "$PackageDir\Assets"
 $ManifestPath = "$PackageDir\Package.appxmanifest"
 $OutputDir = "$SolutionDir\Output"
 $MsixPath = "$OutputDir\${AppName}_${Version}_x64.msix"
+$MsixUploadPath = "$OutputDir\${AppName}_${Version}_x64.msixupload"
 
 # Step 1: Build
 if (-not $SkipBuild) {
@@ -49,7 +50,7 @@ $ManifestContent = $ManifestContent -replace '\$targetnametoken\$', $AppName
 $ManifestContent = $ManifestContent -replace '\$targetentrypoint\$', $AppName
 $ManifestContent | Set-Content -Path "$LayoutDir\AppxManifest.xml"
 
-# Step 3: Create MSIX
+# Step 3: Create MSIX package
 Write-Host "Creating MSIX package..." -ForegroundColor Cyan
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
 
@@ -65,10 +66,22 @@ if (-not $makeAppx) {
     throw "makeappx.exe not found. Install Windows SDK."
 }
 
+Write-Host "Packing .msix..." -ForegroundColor Cyan
 & $makeAppx pack /d "$LayoutDir" /p "$MsixPath" /l
 if ($LASTEXITCODE -ne 0) { throw "MakeAppx failed" }
 
-# Step 4: Sign (optional)
+Write-Host "Creating .msixupload (wrapper ZIP with .msix)..." -ForegroundColor Cyan
+$MsixUploadTemp = "$OutputDir\${AppName}_${Version}_x64_temp.zip"
+
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$zip = [System.IO.Compression.ZipFile]::Open($MsixUploadTemp, 'Create')
+$null = [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $MsixPath, (Split-Path -Leaf $MsixPath))
+$zip.Dispose()
+
+if (Test-Path $MsixUploadPath) { Remove-Item -Path $MsixUploadPath -Force }
+Rename-Item -Path $MsixUploadTemp -NewName (Split-Path -Leaf $MsixUploadPath)
+
+# Step 4: Sign (optional) — sign the .msix, then rebuild .msixupload
 if ($Sign) {
     Write-Host "Signing package..." -ForegroundColor Cyan
     $signtool = Get-ChildItem -Path "${env:ProgramFiles(x86)}\Microsoft SDKs\ClickOnce\SignTool\signtool.exe" |
@@ -77,10 +90,15 @@ if ($Sign) {
 
     & $signtool sign /a /fd SHA256 /v "$MsixPath"
     if ($LASTEXITCODE -ne 0) { throw "Signing failed" }
+
+    & $signtool sign /a /fd SHA256 /v "$MsixUploadPath"
+    if ($LASTEXITCODE -ne 0) { throw "Signing msixupload failed" }
 }
 
 # Cleanup
 Remove-Item -Path $LayoutDir -Recurse -Force
 
-Write-Host "`nPackage created: $MsixPath" -ForegroundColor Green
-Write-Host "`nTo upload to the Store, submit $MsixPath or the publish folder directly." -ForegroundColor Green
+Write-Host "`nPackages created:" -ForegroundColor Green
+Write-Host "  $MsixPath" -ForegroundColor Green
+Write-Host "  $MsixUploadPath" -ForegroundColor Green
+Write-Host "`nUpload BPlayer_${Version}_x64.msixupload to the Store." -ForegroundColor Green
